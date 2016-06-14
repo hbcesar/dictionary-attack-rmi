@@ -31,6 +31,7 @@ class AttackThread extends Thread {
     return d_message.toLowerCase().contains(k_text.toLowerCase());
   }
 
+//esses argumentos deveriam ser passados na construcao da classe!!!
   @Override
   public void startSubAttack(byte[] ciphertext, byte[] knowntext, long initialwordindex, long finalwordindex, SlaveManager callbackinterface) throws RemoteException {
     String key;
