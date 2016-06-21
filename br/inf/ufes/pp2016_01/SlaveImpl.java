@@ -113,6 +113,8 @@ public class SlaveImpl implements Slave {
                 final Slave stub = (Slave) UnicastRemoteObject.exportObject(this.s, 0);
                 this.s.setId(m.addSlave(stub, name));
 
+                //TODO
+                //Corrigir: só procura no registry se nao achar o mestre
             } catch (RemoteException ex) {
                 Logger.getLogger(SlaveImpl.class.getName()).log(Level.SEVERE, null, ex);
             }
