@@ -13,62 +13,53 @@ import java.util.HashMap;
 import java.util.List;
 
 public class MasterImpl implements Master {
-    Map<Integer, SlaveImpl> slaveMap = new HashMap<Integer, SlaveImpl>();
-    Map<Integer, String> slaveListIds = new HashMap<Integer, String>();
-   
+    // Map<Integer, SlaveImpl> slaveMap = new HashMap<Integer, SlaveImpl>();
+    // Map<Integer, String> slaveListIds = new HashMap<Integer, String>();
+
     private static List<String> dictionary = new ArrayList<>();
     private Map<Integer, SlaveData> slaves = new HashMap<>();
     private Map<Integer, SlaveData> falhas = new HashMap<>();
     List<Guess> guessList = new ArrayList<Guess>();
 
     private int nSlaves = 0;
-    private long dictionaryLength;
+    // private long dictionaryLength;
 
     //metodo de Attacker
     @Override
     public Guess[] attack(byte[] ciphertext, byte[] knowntext) {
-//        TODO
         Guess[] guessArray = null;
-        
+
         long tamVetor = dictionary.size();
         long tamVetorEscravos = tamVetor / slaves.size();
         long resto = tamVetor % slaves.size();
         long range = 0;
         long inicio = 0;
         long fim = tamVetorEscravos;
-        
+
         for (Map.Entry<Integer, SlaveData> e : slaves.entrySet()) {
             //se a divisao de vetores nao for exata, vai atribuindo +1 campo do vetor a cada escravo
             if (resto > 0) {
                 fim++;
                 resto--;
             }
-            
+
             SlaveData slaveData = e.getValue();
             Slave slave = slaveData.getSlaveReference();
-            
+
             slaveData.setBeginIndex(inicio);
             slaveData.setEndIndex(fim);
             slaveData.setTime(System.nanoTime());
-            
+
             slave.startSubAttack(ciphertext, knowntext, inicio, fim, this);
-            
+
             inicio = fim;
             fim += tamVetorEscravos;
-            
-            //Cria as threads para executar os meninos escravos (mover isso pro lado do escravo)
-//            ThreadMestreEscravo exec = new ThreadMestreEscravo(e.getValue(), subVetor);
-//            meninxs.add(exec);
-//            Thread t = new Thread(exec);
-//            threads.add(t);
-//
-//            t.start();
         }
 
 
         return guessArray;
     }
-    
+
     private void readDictionary() {
         try {
             BufferedReader br;
@@ -97,32 +88,32 @@ public class MasterImpl implements Master {
 
     //metodos de SlaveManager
     public synchronized int addSlave(Slave s, String slavename) throws RemoteException {
-    
+
         if(!slaveListIds.containsValue(slavename)) {
             slaveListIds.put(nSlaves, slavename);
             slaveMap.put(nSlaves, (SlaveImpl)s);
 
             System.out.println("Escravo adicionado.");
         }
-        
+
         return nSlaves++;
     }
 
     public synchronized void removeSlave(int slaveKey) throws RemoteException {
         if(slaveMap.containsKey(slaveKey)) {
             Slave failed = this.slaves.get(slaveKey);
-            
+
             SlaveData remaining = new SlaveData();
             remaining.setBeginIndex(failed.getLastCheckedIndex());
             remaining.setEndIndex(failed.getEndIndex());
-            
+
             falhas.put(nSlaves++, remaining);
-            
+
             slaveListIds.remove(slaveKey);
             slaveMap.remove(slaveKey);
-                
+
             System.out.println("Escravo " + slaveKey + " removido.");
-         } 
+         }
     }
 
     public void foundGuess(long currentindex, Guess currentguess) throws RemoteException {
@@ -131,9 +122,10 @@ public class MasterImpl implements Master {
     }
 
     public void checkpoint(long currentindex) throws RemoteException {
-
+      //TODO
+      //controlar os checkpoints de cada escravo e remove-los da fila em caso de falha
     }
-    
+
     // Captura o CTRL+C
     //http://stackoverflow.com/questions/1611931/catching-ctrlc-in-java
     public void attachShutDownHook() {
@@ -168,9 +160,12 @@ public class MasterImpl implements Master {
             registry.rebind(masterName, stubRef);
 
             System.out.println("Mestre está pronto...");
-        
+
+            //TODO
+            //lembrar de fazer o attachShutDownHook
+
         }catch(Exception e){
-          System.err.println("Mestre gerou exceção.");  
+          System.err.println("Mestre gerou exceção.");
           e.printStackTrace();
         }
 /*
@@ -183,4 +178,3 @@ public class MasterImpl implements Master {
         } */
     }
 }
-

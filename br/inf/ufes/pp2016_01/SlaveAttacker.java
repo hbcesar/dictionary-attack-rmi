@@ -145,9 +145,9 @@ public class SlaveAttacker extends Thread {
     @Override
     public void run() {
       try {
-        myManager.checkpoint((long) SlaveImpl.this.getCurrentIndex());
+        myManager.checkpoint((long) SlaveAttacker.this.getCurrentIndex());
       } catch (RemoteException ex) {
-        Logger.getLogger(SlaveImpl.class.getName()).log(Level.SEVERE, null, ex);
+        Logger.getLogger(SlaveAttacker.class.getName()).log(Level.SEVERE, null, ex);
       }
     }
   }
