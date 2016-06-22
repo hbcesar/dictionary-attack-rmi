@@ -3,11 +3,7 @@ package br.inf.ufes.pp2016_01;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
-import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
@@ -114,14 +110,14 @@ public class SlaveAttacker extends Thread {
     * Baseado em: http://www.tutorialspoint.com/java/util/timer_scheduleatfixedrate_delay.htm
     */
     Timer scheduler = new Timer();
-    TimerTask checkpointer = new Checkpointer();
+    TimerTask checkpointer = new Checkpointer(this.callbackinterface);
     scheduler.scheduleAtFixedRate(checkpointer, 20000, 20000);
 
     for (currentIndex = begin; currentIndex <= end; currentIndex += 1) {
       key = dictionary.get((int)currentIndex);
-      decrypted_message = decrypt(ciphertext, key.getBytes());
+      decrypted_message = decrypt(key.getBytes());
 
-      if (checkGuess(decrypted_message, knowntext)) {
+      if (checkGuess(decrypted_message)) {
         Guess guess = new Guess();
         guess.setKey(key);
         guess.setMessage(decrypted_message);
@@ -142,10 +138,16 @@ public class SlaveAttacker extends Thread {
 
   //Inner class que realiza checkpoint a cada 20s
   private class Checkpointer extends TimerTask {
+      private SlaveManager callbackinterface;
+      
+      public Checkpointer(SlaveManager c){
+          this.callbackinterface = c;
+      }
+      
     @Override
     public void run() {
       try {
-        myManager.checkpoint((long) SlaveAttacker.this.getCurrentIndex());
+        callbackinterface.checkpoint((long) SlaveAttacker.this.getCurrentIndex());
       } catch (RemoteException ex) {
         Logger.getLogger(SlaveAttacker.class.getName()).log(Level.SEVERE, null, ex);
       }

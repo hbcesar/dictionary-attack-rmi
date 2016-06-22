@@ -8,6 +8,17 @@ public class SlaveData {
     private long lastCheckedIndex;
     private String name;
     private Slave slaveReference;
+    private boolean working;
+    
+    public SlaveData(Slave slaveReference, String name, long id){
+        this.slaveReference = slaveReference;
+        this.name = name;
+        this.id = id;
+    }
+    
+    public SlaveData(){
+        
+    }
 
     public double getTime() {
         return time;
@@ -65,5 +76,7 @@ public class SlaveData {
         this.slaveReference = slaveReference;
     }
     
-    
+    public boolean isWorking(){
+        return this.working;
+    }
 }

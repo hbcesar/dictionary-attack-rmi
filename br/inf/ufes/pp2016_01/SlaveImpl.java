@@ -1,8 +1,5 @@
 package br.inf.ufes.pp2016_01;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -12,8 +9,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
-import javax.crypto.Cipher;
-import javax.crypto.spec.SecretKeySpec;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -24,6 +19,10 @@ public class SlaveImpl implements Slave {
     private int id;
 
     private Thread thread;
+    
+    public SlaveImpl(String name){
+        this.name = name;
+    }
 
     /**
      * **** Getters and Setters *******
@@ -44,15 +43,6 @@ public class SlaveImpl implements Slave {
     public void setName(String name) {
         this.name = name;
     }
-
-    public long getCurrentIndex() {
-        return currentIndex;
-    }
-
-    public void setCurrentIndex(long currentIndex) {
-        this.currentIndex = currentIndex;
-    }
-
 
     /**
      * Inicia o sub-ataque
@@ -145,14 +135,14 @@ public class SlaveImpl implements Slave {
          //Procura Mestre no Registry
          System.out.println(host);
          Registry registry = LocateRegistry.getRegistry(host);
-         mestre = (InterfaceMestre) registry.lookup("ReferenciaMestre");
-         SlaveImpl escravo = new SlaveImpl();
+         mestre = (Master) registry.lookup("ReferenciaMestre");
+         SlaveImpl escravo = new SlaveImpl("ceso");
 
          //cria stub do escravo
          Slave stub = (Slave) UnicastRemoteObject.exportObject(escravo, 0);
 
          //De acordo com especificação, escravo deve se registrar no menino mestre
-         mestre.incluirFilaEscravos(stub);
+         mestre.addSlave(stub, escravo.getName());
 
          //"Attach" o metodo que executa operacoes necessarias caso o escravo finalize
          escravo.attachShutDownHook(mestre);
