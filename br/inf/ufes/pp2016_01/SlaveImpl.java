@@ -51,9 +51,10 @@ public class SlaveImpl implements Slave {
     @Override
     public void startSubAttack(byte[] ciphertext, byte[] knowntext, long initialwordindex, long finalwordindex, SlaveManager callbackinterface) throws RemoteException {
         SlaveAttacker exec = new SlaveAttacker(ciphertext, knowntext, initialwordindex, finalwordindex, callbackinterface);
-        Thread thread = new Thread(exec);
-        this.thread = thread;
-        thread.start();
+        // Thread thread = new Thread(exec);
+        // this.thread = thread;
+        // thread.start();
+        exec.startSubAttack();
     }
 
     // Desregistra o escravo da lista do Mestre em caso de termino.

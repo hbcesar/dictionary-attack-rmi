@@ -14,6 +14,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class MasterImpl implements Master {
+    private Map<Integer, ThreadMestreEscravo> threads = new HashMap();
 
     private static List<String> dictionary = new ArrayList<>();
     private Map<Integer, SlaveData> slaves = new HashMap<>();
@@ -23,15 +24,16 @@ public class MasterImpl implements Master {
 
     private int nSlaves = 0;
     private int nFailed = 0;
+    private int completed = 0;
     
     public MasterImpl(){
-        MasterImpl.readDictionary();
     }
 
     //metodo de Attacker
     @Override
     public Guess[] attack(byte[] ciphertext, byte[] knowntext) {
-        Guess[] guessArray = null;
+        this.dictionary = readDictionary();
+        // List<Guess> guesses = new ArrayList<Guess>();
 
         if(dictionary.size() > 0){
             System.out.println("Dicionário não foi lido corretamente.");
@@ -55,21 +57,68 @@ public class MasterImpl implements Master {
 
             slaveData.setBeginIndex(inicio);
             slaveData.setEndIndex(fim);
-            slaveData.setTime(System.nanoTime());
+            
 
-            try {
-                slave.startSubAttack(ciphertext, knowntext, inicio, fim, this);
-            } catch (RemoteException ex) {
-                Logger.getLogger(MasterImpl.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            // try {
+                ThreadMestreEscravo thread = new ThreadMestreEscravo(slave, ciphertext, knowntext, inicio, fim, this);
+                threads.put(slaveData.getId(), thread);
+                slaveData.setTime(System.nanoTime());
+                thread.start();
+
+
+                // slave.startSubAttack(ciphertext, knowntext, inicio, fim, this);
+            // } catch (RemoteException ex) {
+            //     Logger.getLogger(MasterImpl.class.getName()).log(Level.SEVERE, null, ex);
+            // }
 
             inicio = fim;
             fim += tamVetorEscravos;
         }
 
-        //esse return só pode acontecer quando a galera toda terminar
+        for (Map.Entry<Integer, ThreadMestreEscravo> e : threads.entrySet()){
+            try {
+                e.getValue().join();
+                threads.remove(e);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        //se chegou até aqui, significa que os escravos terminaram de alguma forma (compeltaram ou falharam)
+        //entao, verifica se existe trabalho a ser redistribuido
+        // for(Map.Entry<Integer, SlaveData> e : failed.entrySet()){
+            rearrangeAttack();
+        // }
         
         return guessArray;
+    }
+
+    private void rearrangeAttack(){
+        Iterator it = slaves.entrySet().iterator();
+
+        for(Map.Entry<Integer, SlaveData> e : failed.entrySet()){
+            if(it.hasNext()) {
+                SlaveData slaveData = e.getValue();
+                ThreadMestreEscravo thread = new ThreadMestreEscravo(it.next().getSlaveReference(), ciphertext, knowntext, inicio, fim, this);
+                threads.put(slaveData.getId());
+                slaveData.setTime(System.nanoTime());
+                thread.start();
+                failed.remove(slaveData.getId());
+            } else break;
+        }
+
+        for (Map.Entry<Integer, ThreadMestreEscravo> e : threads.entrySet()){
+            try {
+                e.getValue().join();
+                threads.remove(e);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        if(failed.size() > 0)
+            rearrangeAttack();
+        else return;
     }
 
     public static void readDictionary() {
@@ -109,15 +158,16 @@ public class MasterImpl implements Master {
         }
     }
 
+    //TODO melhorar aqui
     @Override
     public synchronized void removeSlave(int slaveKey) throws RemoteException {
         if (slaveID.containsValue(slaveKey)) {
-            if (!slaves.get(slaveKey).isWorking()) {
-                slaves.remove(slaveKey);
-                slaveID.remove(slaves.get(slaveKey).getName());
+            // if (!slaves.get(slaveKey).isWorking()) {
+                // slaves.remove(slaveKey);
+                // slaveID.remove(slaves.get(slaveKey).getName());
 
-                System.out.println("Escravo " + slaveKey + " removido.");
-            } else {
+                // System.out.println("Escravo " + slaveKey + " removido.");
+            // } else {
                 SlaveData s = slaves.get(slaveKey);
                 SlaveData remaining = new SlaveData();
                 remaining.setBeginIndex(s.getLastCheckedIndex());
@@ -125,6 +175,11 @@ public class MasterImpl implements Master {
 
                 slaves.remove(slaveKey);
                 slaveID.remove(s.getName());
+                failed.put(remaining);
+
+                //falta interromper a thread dele
+                threads.get(s.getId()).interrupt();
+                threads.remove(s.getId());
 
                 System.out.println("Escravo" + s.getName() + "removido.");
             }
@@ -133,7 +188,7 @@ public class MasterImpl implements Master {
 
     @Override
     public void foundGuess(long currentindex, Guess currentguess) throws RemoteException {
-        System.out.println("Nova chave encontrada!");
+        System.out.println("Nova possível chave encontrada: " + currentguess.getKey());
         guessList.add(currentguess);
     }
 
@@ -150,6 +205,14 @@ public class MasterImpl implements Master {
                 System.out.println("Checkpoint Escravo: " + entry.getValue().getName());
                 entry.getValue().setTime(System.nanoTime());
                 entry.getValue().setLastCheckedIndex(currentindex);
+
+                // if(entry.getValue.getEndIndex == currentindex){
+                //     this.completed++;
+
+                //     if(this.completed >= slaves.size()){
+
+                //     }
+                // }
             }
         }
 
