@@ -8,10 +8,6 @@ public class SequencialTester {
 	//dicionario
 	List<String> dictionary = new ArrayList<String>();
 
-//	public static Guess[] attack(byte[] ciphertext, byte[] knowntext) {
-		// TODO
-//	}
-
 	//mudar tipo de retorno(?)
 	public static String readFile(String name) throws IOException {
 		// TODO
