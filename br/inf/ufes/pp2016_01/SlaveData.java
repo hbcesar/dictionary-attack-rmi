@@ -25,7 +25,7 @@ public class SlaveData {
     }
 
     public void setTime(double time) {
-        this.time = time / 1000;
+        this.time = time / 1000000000.0;
     }
 
     public long getId() {

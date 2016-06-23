@@ -111,7 +111,7 @@ public class MasterImpl implements Master {
 
     @Override
     public synchronized void removeSlave(int slaveKey) throws RemoteException {
-        if (slaves.containsValue(slaveKey)) {
+        if (slaveID.containsValue(slaveKey)) {
             if (!slaves.get(slaveKey).isWorking()) {
                 slaves.remove(slaveKey);
                 slaveID.remove(slaves.get(slaveKey).getName());
