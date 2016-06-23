@@ -17,10 +17,11 @@ public class SlaveImpl implements Slave {
     private static List<String> dictionary = new ArrayList<>();
     private String name;
     private int id;
+    private Master master;
 
     private Thread thread;
-    
-    public SlaveImpl(String name){
+
+    public SlaveImpl(String name) {
         this.name = name;
     }
 
@@ -69,87 +70,96 @@ public class SlaveImpl implements Slave {
         });
     }
 
-    //Procura pelo mestre
-    private Master searchMaster(String masterName){
-        try {
-            Registry registry = LocateRegistry.getRegistry(masterName);
-            Master mestre = (Master) registry.lookup("ReferenciaMestre");
-            return mestre;
-        } catch (RemoteException | NotBoundException ex) {
-            Logger.getLogger(SlaveImpl.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        return null;
-    }
-
     //Registre o escravo no mestre a cada 30s
-    private void registerSlave(){
+    private void registerSlave() {
         Timer scheduler = new Timer();
-        TimerTask masterRegister = new MasterRegister(this);
+        TimerTask masterRegister = new MasterRegister(this, master);
         scheduler.scheduleAtFixedRate(masterRegister, 30000, 30000);
     }
 
     //Inner class que realiza o registro do mestre a cada 30s
     private class MasterRegister extends TimerTask {
-        private final SlaveImpl s;
 
-        public MasterRegister(SlaveImpl s){
+        private final SlaveImpl s;
+        private final Master master;
+
+        public MasterRegister(SlaveImpl s, Master m) {
             this.s = s;
+            this.master = m;
+        }
+
+        //Procura pelo mestre
+        private Master searchMaster(String masterName) {
+            Master mestre = new MasterImpl();
+
+            try {
+                Registry registry = LocateRegistry.getRegistry(masterName);
+                mestre = (Master) registry.lookup("ReferenciaMestre");
+            } catch (RemoteException | NotBoundException ex) {
+                Logger.getLogger(SlaveImpl.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            return mestre;
         }
 
         @Override
         public void run() {
             try {
-                Master m = SlaveImpl.this.searchMaster("master");
                 final Slave stub = (Slave) UnicastRemoteObject.exportObject(this.s, 0);
-                this.s.setId(m.addSlave(stub, name));
-
-                //TODO
-                //Corrigir: só procura no registry se nao achar o mestre
+                master.addSlave(stub, name);
             } catch (RemoteException ex) {
-                Logger.getLogger(SlaveImpl.class.getName()).log(Level.SEVERE, null, ex);
+                try {
+                    Master m = searchMaster("master");
+                    final Slave stub = (Slave) UnicastRemoteObject.exportObject(this.s, 0);
+                    this.s.setId(m.addSlave(stub, name));
+                } catch (RemoteException ex1) {
+                    Logger.getLogger(SlaveImpl.class.getName()).log(Level.SEVERE, null, ex1);
+                }
             }
         }
     }
 
     public static void main(String[] args) {
-     /*
+        /*
          Cria instância da interface do mestre,
          essa operação é necessária para que o escravo consiga se
          registrar na fila gerenciada pelo mestre.
-      */
-     Master mestre;
+         */
+        Master mestre;
 
-     //Para execução distribuida: java SlaveImpl IPESCRAVO IPMESTRE
-     //Aqui o escravo recebe sua propria referencia
-     String host = null;
-     if (args.length > 0) {
-         host = args[0];
-     }
+        if (args.length < 2) {
+            System.out.println("Parâmetros inválidos, por favor, forneça referencia ao mestre e nome do escravo (nessa ordem)");
+        }
 
-     //Escravo recebe referencia para o mestre
-     //if (args.length > 0) {
-     //System.setProperty("java.rmi.server.hostname", args[0]);
-     //}
+        //Para execução distribuida: java SlaveImpl IPESCRAVO IPMESTRE
+        //Aqui o escravo recebe sua propria referencia
+        String host = null;
+        if (args.length > 0) {
+            host = args[0];
+        }
 
-     try {
-         //Procura Mestre no Registry
-         System.out.println(host);
-         Registry registry = LocateRegistry.getRegistry(host);
-         mestre = (Master) registry.lookup("ReferenciaMestre");
-         SlaveImpl escravo = new SlaveImpl("ceso");
+        //Escravo recebe referencia para o mestre
+//        if (args.length > 0) {
+//            System.setProperty("java.rmi.server.hostname", args[0]);
+//        }
+        try {
+            //Procura Mestre no Registry
+            System.out.println(host);
+            Registry registry = LocateRegistry.getRegistry(host);
+            mestre = (Master) registry.lookup("ReferenciaMestre");
+            SlaveImpl escravo = new SlaveImpl(args[1]);
 
-         //cria stub do escravo
-         Slave stub = (Slave) UnicastRemoteObject.exportObject(escravo, 0);
+            //cria stub do escravo
+            Slave stub = (Slave) UnicastRemoteObject.exportObject(escravo, 0);
 
-         //De acordo com especificação, escravo deve se registrar no menino mestre
-         mestre.addSlave(stub, escravo.getName());
+            //De acordo com especificação, escravo deve se registrar no menino mestre
+            mestre.addSlave(stub, escravo.getName());
 
-         //"Attach" o metodo que executa operacoes necessarias caso o escravo finalize
-         escravo.attachShutDownHook(mestre);
-         escravo.registerSlave();
+            //"Attach" o metodo que executa operacoes necessarias caso o escravo finalize
+            escravo.attachShutDownHook(mestre);
+            escravo.registerSlave(); //slave ira se registrar a cada 30s
 
-     } catch (RemoteException | NotBoundException e) {
-         e.printStackTrace();
-     }
- }
+        } catch (RemoteException | NotBoundException e) {
+            e.printStackTrace();
+        }
+    }
 }

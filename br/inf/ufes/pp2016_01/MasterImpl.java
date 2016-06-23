@@ -14,26 +14,32 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class MasterImpl implements Master {
-    // Map<Integer, SlaveImpl> slaveMap = new HashMap<Integer, SlaveImpl>();
-    // Map<Integer, String> slaveListIds = new HashMap<Integer, String>();
 
     private static List<String> dictionary = new ArrayList<>();
     private Map<Integer, SlaveData> slaves = new HashMap<>();
     private Map<Integer, SlaveData> failed = new HashMap<>();
-    List<Guess> guessList = new ArrayList<Guess>();
+    private Map<String, Integer> slaveID = new HashMap<>();
+    private List<Guess> guessList = new ArrayList<Guess>();
 
     private int nSlaves = 0;
-    // private long dictionaryLength;
+    private int nFailed = 0;
+    
+    public MasterImpl(){
+        MasterImpl.readDictionary();
+    }
 
     //metodo de Attacker
     @Override
     public Guess[] attack(byte[] ciphertext, byte[] knowntext) {
         Guess[] guessArray = null;
 
+        if(dictionary.size() > 0){
+            System.out.println("Dicionário não foi lido corretamente.");
+        }
+        
         long tamVetor = dictionary.size();
         long tamVetorEscravos = tamVetor / slaves.size();
         long resto = tamVetor % slaves.size();
-        long range = 0;
         long inicio = 0;
         long fim = tamVetorEscravos;
 
@@ -61,10 +67,12 @@ public class MasterImpl implements Master {
             fim += tamVetorEscravos;
         }
 
+        //esse return só pode acontecer quando a galera toda terminar
+        
         return guessArray;
     }
 
-    private void readDictionary() {
+    public static void readDictionary() {
         try {
             BufferedReader br;
             br = new BufferedReader(new FileReader("dictionary.txt"));
@@ -82,40 +90,31 @@ public class MasterImpl implements Master {
         }
     }
 
-//    public Map<Integer, SlaveImpl> getSlaveMap() {
-//        return slaveMap;
-//    }
-//
-//    public Map<Integer, String> getSlaveListIds() {
-//        return slaveListIds;
-//    }
     //metodos de SlaveManager
     @Override
     public synchronized int addSlave(Slave s, String slavename) throws RemoteException {
 
-        SlaveData slaveData = new SlaveData(s, slavename, nSlaves);
-        slaves.put(nSlaves, slaveData);
+        if (slaveID.containsValue(slavename)) {
+            System.out.println("Registro de escravo atualizado.");
 
-        System.out.println("Escravo adicionado.");
+            return slaveID.get(slavename);
+        } else {
+            SlaveData slaveData = new SlaveData(s, slavename, nSlaves);
+            slaves.put(nSlaves, slaveData);
+            slaveID.put(slavename, nSlaves);
 
-        return nSlaves++;
+            System.out.println("Escravo" + slavename + "adicionado.");
+
+            return nSlaves++;
+        }
     }
 
     @Override
     public synchronized void removeSlave(int slaveKey) throws RemoteException {
         if (slaves.containsValue(slaveKey)) {
-//            Slave failed = this.slaves.get(slaveKey);
-//failed.put(slaveKey, slaves.get(slaveKey));
-
-//            SlaveData remaining = new SlaveData();
-//            remaining.setBeginIndex(failed.getLastCheckedIndex());
-//            remaining.setEndIndex(failed.getEndIndex());
-//            falhas.put(nSlaves++, remaining);
-//            slaveListIds.remove(slaveKey);
-//            slaveMap.remove(slaveKey);
-//deveria checar se esta atualmente realizando trabalho
             if (!slaves.get(slaveKey).isWorking()) {
                 slaves.remove(slaveKey);
+                slaveID.remove(slaves.get(slaveKey).getName());
 
                 System.out.println("Escravo " + slaveKey + " removido.");
             } else {
@@ -123,21 +122,37 @@ public class MasterImpl implements Master {
                 SlaveData remaining = new SlaveData();
                 remaining.setBeginIndex(s.getLastCheckedIndex());
                 remaining.setEndIndex(s.getEndIndex());
+
+                slaves.remove(slaveKey);
+                slaveID.remove(s.getName());
+
+                System.out.println("Escravo" + s.getName() + "removido.");
             }
         }
     }
 
     @Override
     public void foundGuess(long currentindex, Guess currentguess) throws RemoteException {
-        System.out.println("Nova palavra encontrada!");
+        System.out.println("Nova chave encontrada!");
         guessList.add(currentguess);
     }
 
+    @Override
     public void checkpoint(long currentindex) throws RemoteException {
         //TODO
         //controlar os checkpoints de cada escravo e remove-los da fila em caso de falha
         //precisa criar uma thread que fique checando se cada escravo ultrapassou 20 continuamente
         //caso sim, retorna esse escravo pra ser removido
+
+        //Procura em qual escravo esse checkpoint corresponde
+        for (Map.Entry<Integer, SlaveData> entry : slaves.entrySet()) {
+            if (currentindex >= entry.getValue().getBeginIndex() && currentindex <= entry.getValue().getEndIndex()) {
+                System.out.println("Checkpoint Escravo: " + entry.getValue().getName());
+                entry.getValue().setTime(System.nanoTime());
+                entry.getValue().setLastCheckedIndex(currentindex);
+            }
+        }
+
     }
 
     // Captura o CTRL+C
@@ -150,7 +165,7 @@ public class MasterImpl implements Master {
                 // Remove todos escravos da lista caso o mestre caia
                 for (Map.Entry<Integer, SlaveData> slave : slaves
                         .entrySet()) {
-                    slaves.remove(slave);
+                    slaves.remove(slave.getValue().getId());
                 }
                 System.out.println(" Mestre Caiu! :(");
             }
@@ -168,11 +183,12 @@ public class MasterImpl implements Master {
             }
 
             Master master = new MasterImpl();
+            
             Master stubRef = (Master) UnicastRemoteObject.exportObject(master, 2001);
 
             final Registry registry = LocateRegistry.getRegistry();
             registry.rebind(masterName, stubRef);
-
+            
             System.out.println("Mestre está pronto...");
 
             //TODO
@@ -180,13 +196,5 @@ public class MasterImpl implements Master {
         } catch (Exception e) {
             System.err.println("Mestre gerou exceção.");
         }
-        /*
-        synchronized (this) {
-            try {
-                this.wait();
-            } catch (InterruptedException e) {
-            //
-            }
-        } */
     }
 }
