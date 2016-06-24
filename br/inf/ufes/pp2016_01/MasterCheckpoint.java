@@ -31,7 +31,7 @@ public class MasterCheckpoint extends Thread {
                 Thread.sleep(1000);
                 for (Map.Entry<Integer, SlaveData> e : slaves.entrySet()) {
                     SlaveData s = e.getValue();
-                    long currentTime = System.nanoTime();
+                    long currentTime = System.nanoTime()/1000000000;
                     long lastCheckedTime = (long) s.getTime();
                     long TimeBetweenCheckpoints = currentTime - lastCheckedTime;
                     if (TimeBetweenCheckpoints > 20.0) {

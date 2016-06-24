@@ -69,7 +69,7 @@ public class MasterImpl implements Master {
             
 
             // try {
-            ThreadMestreEscravo thread = new ThreadMestreEscravo(slave, ciphertext, knowntext, inicio, fim, this);
+            ThreadMestreEscravo thread = new ThreadMestreEscravo(slave, ciphertext, knowntext, inicio, fim -1, this);
             threads.put((int)slaveData.getId(), thread);
             slaveData.setTime(System.nanoTime());
             thread.start();
@@ -86,16 +86,19 @@ public class MasterImpl implements Master {
         
         masterCheckpoint = new MasterCheckpoint(this, slaves);
         masterCheckpoint.start();
-
+        List<Integer> keysList = new ArrayList<Integer>();
         for (Map.Entry<Integer, ThreadMestreEscravo> e : threads.entrySet()){
             try {
                 e.getValue().join();
-                threads.remove(e.getKey());
+                keysList.add(e.getKey());
             } catch (InterruptedException err) {
                 err.printStackTrace();
             }
         }
-
+        for (int key : keysList) {
+            threads.remove(key);
+        }
+        
         //se chegou até aqui, significa que os escravos terminaram de alguma forma (compeltaram ou falharam)
         //entao, verifica se existe trabalho a ser redistribuido
         // for(Map.Entry<Integer, SlaveData> e : failed.entrySet()){
@@ -145,7 +148,7 @@ public class MasterImpl implements Master {
 public void readDictionary() {
     try {
         BufferedReader br;
-        br = new BufferedReader(new FileReader("dictionary.txt"));
+        br = new BufferedReader(new FileReader("/tmp/dictionary.txt"));
 
             //palavra lida
         String word;
