@@ -2,6 +2,7 @@ package br.inf.ufes.pp2016_01;
 
 import java.io.*;
 import java.rmi.registry.*;
+import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.Random;
 import java.util.List;
@@ -12,24 +13,13 @@ terceiro parâmetro pode ser especificado com o tamanho do vetor a ser gerado. S
 aleatoriamente (na faixa 1000 a 100000).
 */
 public class Client {
+
+
 	public static void main(String[] args) {
 
-		List<String> dictionary = new ArrayList<String>();
-	    FileManager filemanager;
-	    File filename = new File("/tmp/dictionary.txt");
+//		List<String> dictionary = readDictionary();
 
-	    try {
-	            scanner = new Scanner(new File(filename));
 
-	            while(scanner.hasNext()){
-	                String line = scanner.nextLine();
-	                dictionary.add(line);
-	            }
-	            scanner.close();
-	        } catch (FileNotFoundException e) {
-	            e.printStackTrace();
-	            System.out.println("Arquivo nao enconrado.");
-	        }
 
 	    //recebe nome que foi associado ao mestre (para buscar no Registry)
 	   /*String hostname = null;
@@ -41,10 +31,45 @@ public class Client {
 	    String filename = args[0];
 	    String knownword = args[1];
 	    String name = "mestre";
-	    byte[] ciphertext;
+            String msg = "A pipa do vovô não sobe mais.";
+	    byte[] ciphertext = msg.getBytes();
 
+                    try {
+            //faz registro do mestre com o nome dado
+            Registry registry = LocateRegistry.getRegistry(hostname);
 
-	}
+            //objeto remoto que o qual executara os metodos
+            final Master stub = (Master) registry.lookup("mestre");
+
+            //Imprime o header do CSV
+            System.out.println("Tamanho do Vetor;Tempo de Execução Estático;Tempo de Execução Distribuido");
+
+            //testa vetores (tamanho de 500 até 10ˆ6 com intervalos de 500)
+
+                //Executa Calculo Serial Não paralelizado
+//                tempoInicialEstatico = System.nanoTime();
+//                resultado_estatico = somar(vetorInicial);
+//                tempoFinalEstatico = System.nanoTime();
+
+                //Executa calculo Paralelo
+                long tempoInicial = System.nanoTime();
+                Guess g[] = stub.attack(ciphertext, knownword.getBytes());
+                long tempoFinal = System.nanoTime();
+                
+                GuessPrinter.print(g);
+
+                //Calcula tempo gasto em ambos os casos
+//                tempoExecucaoEstatico = 0; //(tempoFinalEstatico - tempoInicialEstatico);
+                long tempoExecucao = (long)((tempoFinal - tempoInicial)/1000000000.0);
+
+//                System.out.println(vetorInicial.size() + ";" + tempoExecucaoEstatico + ";" + tempoExecucao);
+                System.out.println(tempoExecucao);
+            } catch (Exception e) {
+            System.err.println("Erro encontrado (cliente): " + e.toString());
+            e.printStackTrace();
+        }
+        }
+
 
 
 	/*

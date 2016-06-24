@@ -40,13 +40,13 @@ public class MasterImpl implements Master {
     public Guess[] attack(byte[] ciphertext, byte[] knowntext) {
         this.readDictionary();
         // List<Guess> guesses = new ArrayList<Guess>();
+        if(dictionary.size() == 0){
+            System.out.println("Dicionário não foi lido corretamente.");
+        }
+        
         Guess[] guesses = null;
         
         done = false;
-
-        if(dictionary.size() > 0){
-            System.out.println("Dicionário não foi lido corretamente.");
-        }
         
         long tamVetor = dictionary.size();
         long tamVetorEscravos = tamVetor / slaves.size();
