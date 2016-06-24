@@ -18,96 +18,96 @@ import javax.crypto.spec.SecretKeySpec;
  * @author hbcesar
  */
 public class Sequencial {
-     private List<String> dictionary = new ArrayList<>();
-  private long currentIndex;
-  
+ private List<String> dictionary = new ArrayList<>();
+ private long currentIndex;
+ 
 
-  private byte[] ciphertext;
-  private byte[] knowntext;
-  private Guess[] guesses;
+ private byte[] ciphertext;
+ private byte[] knowntext;
+ private Guess[] guesses;
 
-  public Sequencial(byte[] ciphertext, byte[] knowntext){
-    this.ciphertext = ciphertext;
-    this.knowntext = knowntext;
+ public Sequencial(byte[] ciphertext, byte[] knowntext){
+  this.ciphertext = ciphertext;
+  this.knowntext = knowntext;
+}
+
+
+private byte[] decrypt(byte[] key) {
+  try {
+    SecretKeySpec keySpec = new SecretKeySpec(key, "Blowfish");
+
+    Cipher cipher = Cipher.getInstance("Blowfish");
+    cipher.init(Cipher.DECRYPT_MODE, keySpec);
+
+    byte[] decrypted = cipher.doFinal(this.ciphertext);
+
+    return decrypted;
+
+  } catch (javax.crypto.BadPaddingException e) {
+    System.out.println("Senha invalida.");
+    return null;
+
+  } catch (Exception e) {
+    System.out.println("Sequencial: erro na descriptografia.");
+    return null;
   }
+}
 
-  
-  private byte[] decrypt(byte[] key) {
-    try {
-      SecretKeySpec keySpec = new SecretKeySpec(key, "Blowfish");
+private boolean checkGuess(byte[] decrypted_message) {
+  String d_message = new String(decrypted_message);
+  String k_text = new String(this.knowntext);
 
-      Cipher cipher = Cipher.getInstance("Blowfish");
-      cipher.init(Cipher.DECRYPT_MODE, keySpec);
+  return d_message.toLowerCase().contains(k_text.toLowerCase());
+}
 
-      byte[] decrypted = cipher.doFinal(this.ciphertext);
+public void startSubAttack() {
+  String key;
+  byte[] decrypted_message;
+  long begin = 0;
+  long end = dictionary.size();
+  int i = 0;
 
-      return decrypted;
 
-    } catch (javax.crypto.BadPaddingException e) {
-      System.out.println("Senha invalida.");
-      return null;
+  for (currentIndex = begin; currentIndex <= end; currentIndex += 1) {
+    key = dictionary.get((int)currentIndex);
+    decrypted_message = decrypt(key.getBytes());
 
-    } catch (Exception e) {
-      System.out.println("Sequencial: erro na descriptografia.");
-      return null;
+    if (checkGuess(decrypted_message)) {
+      Guess guess = new Guess();
+      guess.setKey(key);
+      guess.setMessage(decrypted_message);
+      guesses[i++] = guess;
     }
   }
-  
-  private boolean checkGuess(byte[] decrypted_message) {
-    String d_message = new String(decrypted_message);
-    String k_text = new String(this.knowntext);
+}
 
-    return d_message.toLowerCase().contains(k_text.toLowerCase());
-  }
-  
-  public void startSubAttack() {
-    String key;
-    byte[] decrypted_message;
-    long begin = 0;
-    long end = dictionary.size();
-    int i = 0;
+public void readDictionary() {
 
-
-    for (currentIndex = begin; currentIndex <= end; currentIndex += 1) {
-      key = dictionary.get((int)currentIndex);
-      decrypted_message = decrypt(key.getBytes());
-
-      if (checkGuess(decrypted_message)) {
-        Guess guess = new Guess();
-        guess.setKey(key);
-        guess.setMessage(decrypted_message);
-        guesses[i++] = guess;
-      }
-    }
-  }
-  
-        public void readDictionary() {
-
-        try {
-            BufferedReader br;
-            br = new BufferedReader(new FileReader("dictionary.txt"));
+  try {
+    BufferedReader br;
+    br = new BufferedReader(new FileReader("dictionary.txt"));
 
             //palavra lida
-            String word;
+    String word;
 
-            while ((word = br.readLine()) != null) {
-                this.dictionary.add(word);
-            }
-
-            br.close();
-
-
-        } catch (IOException ex) {
-            System.out.println("Mestre: arquivo de dicionário não encontrado.");
-        }
-
+    while ((word = br.readLine()) != null) {
+      this.dictionary.add(word);
     }
-        
-        
-    public void atacar(){
-        readDictionary();
-        startSubAttack();
-        GuessPrinter.print(guesses);
-    }
-        
+
+    br.close();
+
+
+  } catch (IOException ex) {
+    System.out.println("Mestre: arquivo de dicionário não encontrado.");
+  }
+
+}
+
+
+public void atacar(){
+  readDictionary();
+  startSubAttack();
+  GuessPrinter.print(guesses);
+}
+
 }

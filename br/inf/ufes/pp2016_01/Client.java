@@ -1,11 +1,6 @@
 package br.inf.ufes.pp2016_01;
 
-import java.io.*;
 import java.rmi.registry.*;
-import java.util.ArrayList;
-import java.util.Scanner;
-import java.util.Random;
-import java.util.List;
 /*
 Receber um argumento na linha de comandos que indica o nome do arquivo que contém o vetor de bytes (com a mensagem criptografada) e outro argumento que
 indica a palavra conhecida que consta da mensagem. Caso o arquivo não exista, o cliente deve gerar o vetor de bytes aleatoriamente e salvá-lo em arquivo. Em um
@@ -47,9 +42,10 @@ public class Client {
             //testa vetores (tamanho de 500 até 10ˆ6 com intervalos de 500)
 
                 //Executa Calculo Serial Não paralelizado
-//                tempoInicialEstatico = System.nanoTime();
-//                resultado_estatico = somar(vetorInicial);
-//                tempoFinalEstatico = System.nanoTime();
+                Sequencial s = new Sequencial(ciphertext, knownword.getBytes());
+                long tempoInicialEstatico = System.nanoTime();
+                s.atacar();
+                long tempoFinalEstatico = System.nanoTime();
 
                 //Executa calculo Paralelo
                 long tempoInicial = System.nanoTime();

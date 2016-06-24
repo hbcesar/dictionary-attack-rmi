@@ -6,7 +6,6 @@
 package br.inf.ufes.pp2016_01;
 
 import java.rmi.RemoteException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;

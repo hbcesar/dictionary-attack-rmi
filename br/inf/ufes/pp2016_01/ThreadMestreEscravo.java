@@ -20,13 +20,13 @@ public class ThreadMestreEscravo extends Thread {
     this.callbackinterface = callbackinterface;
   }
 
-    @Override
-    public void run() {
+  @Override
+  public void run() {
 
-        try {
-            slave.startSubAttack(ciphertext, knowntext, initialwordindex, finalwordindex, callbackinterface);
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        }
+    try {
+      slave.startSubAttack(ciphertext, knowntext, initialwordindex, finalwordindex, callbackinterface);
+    } catch (RemoteException e) {
+      e.printStackTrace();
     }
+  }
 }

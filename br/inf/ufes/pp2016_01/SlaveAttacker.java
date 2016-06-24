@@ -138,12 +138,12 @@ public class SlaveAttacker extends Thread {
 
   //Inner class que realiza checkpoint a cada 20s
   private class Checkpointer extends TimerTask {
-      private SlaveManager callbackinterface;
-      
-      public Checkpointer(SlaveManager c){
-          this.callbackinterface = c;
-      }
-      
+    private SlaveManager callbackinterface;
+    
+    public Checkpointer(SlaveManager c){
+      this.callbackinterface = c;
+    }
+    
     @Override
     public void run() {
       try {

@@ -125,9 +125,9 @@ public class SlaveImpl implements Slave {
          essa operação é necessária para que o escravo consiga se
          registrar na fila gerenciada pelo mestre.
          */
-        Master mestre;
+         Master mestre;
 
-        if (args.length < 2) {
+         if (args.length < 2) {
             System.out.println("Parâmetros inválidos, por favor, forneça referencia ao mestre e nome do escravo (nessa ordem)");
         }
 

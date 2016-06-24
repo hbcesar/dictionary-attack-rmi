@@ -69,10 +69,10 @@ public class MasterImpl implements Master {
             
 
             // try {
-                ThreadMestreEscravo thread = new ThreadMestreEscravo(slave, ciphertext, knowntext, inicio, fim, this);
-                threads.put((int)slaveData.getId(), thread);
-                slaveData.setTime(System.nanoTime());
-                thread.start();
+            ThreadMestreEscravo thread = new ThreadMestreEscravo(slave, ciphertext, knowntext, inicio, fim, this);
+            threads.put((int)slaveData.getId(), thread);
+            slaveData.setTime(System.nanoTime());
+            thread.start();
 
 
                 // slave.startSubAttack(ciphertext, knowntext, inicio, fim, this);
@@ -99,136 +99,136 @@ public class MasterImpl implements Master {
         //se chegou até aqui, significa que os escravos terminaram de alguma forma (compeltaram ou falharam)
         //entao, verifica se existe trabalho a ser redistribuido
         // for(Map.Entry<Integer, SlaveData> e : failed.entrySet()){
-            rearrangeAttack(ciphertext, knowntext);
-            
+        rearrangeAttack(ciphertext, knowntext);
+        
         // }
         
-   
-            for (int i = 0; i < guessList.size(); i++) {
-			guesses[i] = guessList.get(i);
-		}
-            
-            done = true;
         
-        return guesses;
+        for (int i = 0; i < guessList.size(); i++) {
+         guesses[i] = guessList.get(i);
+     }
+     
+     done = true;
+     
+     return guesses;
+ }
+
+ private void rearrangeAttack(byte[] ciphertext, byte[] knowntext){
+    Iterator it = slaves.entrySet().iterator();
+
+    for(Map.Entry<Integer, SlaveData> e : failed.entrySet()){
+        if(it.hasNext()) {
+            SlaveData slaveData = e.getValue();
+            SlaveData worker = (SlaveData) it.next();
+            ThreadMestreEscravo thread;
+            thread = new ThreadMestreEscravo(worker.getSlaveReference(), ciphertext, knowntext, slaveData.getBeginIndex(), slaveData.getEndIndex(), this);
+            threads.put((int)slaveData.getId(), thread);
+            slaveData.setTime(System.nanoTime());
+            thread.start();
+            failed.remove((int)slaveData.getId());
+        } else break;
     }
 
-    private void rearrangeAttack(byte[] ciphertext, byte[] knowntext){
-        Iterator it = slaves.entrySet().iterator();
-
-        for(Map.Entry<Integer, SlaveData> e : failed.entrySet()){
-            if(it.hasNext()) {
-                SlaveData slaveData = e.getValue();
-                SlaveData worker = (SlaveData) it.next();
-                ThreadMestreEscravo thread;
-                thread = new ThreadMestreEscravo(worker.getSlaveReference(), ciphertext, knowntext, slaveData.getBeginIndex(), slaveData.getEndIndex(), this);
-                threads.put((int)slaveData.getId(), thread);
-                slaveData.setTime(System.nanoTime());
-                thread.start();
-                failed.remove((int)slaveData.getId());
-            } else break;
-        }
-
-        for (Map.Entry<Integer, ThreadMestreEscravo> e : threads.entrySet()){
-            try {
-                e.getValue().join();
-                threads.remove(e.getKey());
-            } catch (InterruptedException err) {
-                err.printStackTrace();
-            }
-        }
-
-        if(failed.size() > 0)
-            rearrangeAttack(ciphertext, knowntext);
-    }
-
-    public void readDictionary() {
+    for (Map.Entry<Integer, ThreadMestreEscravo> e : threads.entrySet()){
         try {
-            BufferedReader br;
-            br = new BufferedReader(new FileReader("dictionary.txt"));
+            e.getValue().join();
+            threads.remove(e.getKey());
+        } catch (InterruptedException err) {
+            err.printStackTrace();
+        }
+    }
+
+    if(failed.size() > 0)
+        rearrangeAttack(ciphertext, knowntext);
+}
+
+public void readDictionary() {
+    try {
+        BufferedReader br;
+        br = new BufferedReader(new FileReader("dictionary.txt"));
 
             //palavra lida
-            String word;
+        String word;
 
-            while ((word = br.readLine()) != null) {
-                dictionary.add(word);
-            }
-
-            br.close();
-        } catch (IOException ex) {
-            System.out.println("Mestre: arquivo de dicionário não encontrado.");
+        while ((word = br.readLine()) != null) {
+            dictionary.add(word);
         }
+
+        br.close();
+    } catch (IOException ex) {
+        System.out.println("Mestre: arquivo de dicionário não encontrado.");
     }
+}
 
     //metodos de SlaveManager
-    @Override
-    public synchronized int addSlave(Slave s, String slavename) throws RemoteException {
+@Override
+public synchronized int addSlave(Slave s, String slavename) throws RemoteException {
 
-        if (slaveID.containsKey(slavename)) {
-            System.out.println("Registro de escravo atualizado.");
+    if (slaveID.containsKey(slavename)) {
+        System.out.println("Registro de escravo atualizado.");
 
-            return slaveID.get(slavename);
-        } else {
-            SlaveData slaveData = new SlaveData(s, slavename, nSlaves);
-            slaves.put(nSlaves, slaveData);
-            slaveID.put(slavename, nSlaves);
+        return slaveID.get(slavename);
+    } else {
+        SlaveData slaveData = new SlaveData(s, slavename, nSlaves);
+        slaves.put(nSlaves, slaveData);
+        slaveID.put(slavename, nSlaves);
 
-            System.out.println("Escravo" + slavename + "adicionado.");
+        System.out.println("Escravo" + slavename + "adicionado.");
 
-            return nSlaves++;
-        }
+        return nSlaves++;
     }
+}
 
     //TODO melhorar aqui
-    @Override
-    public synchronized void removeSlave(int slaveKey) throws RemoteException {
-        if (slaveID.containsValue(slaveKey)) {
+@Override
+public synchronized void removeSlave(int slaveKey) throws RemoteException {
+    if (slaveID.containsValue(slaveKey)) {
             // if (!slaves.get(slaveKey).isWorking()) {
                 // slaves.remove(slaveKey);
                 // slaveID.remove(slaves.get(slaveKey).getName());
 
                 // System.out.println("Escravo " + slaveKey + " removido.");
             // } else {
-                SlaveData s = slaves.get(slaveKey);
-                
-                if(!s.hasFinished()){
-                    SlaveData remaining = new SlaveData();
-                    remaining.setBeginIndex(s.getLastCheckedIndex());
-                    remaining.setEndIndex(s.getEndIndex());
-                    failed.put(nFailed, remaining);
-                }
-                
-                slaves.remove(slaveKey);
-                slaveID.remove(s.getName());
-                
+        SlaveData s = slaves.get(slaveKey);
+        
+        if(!s.hasFinished()){
+            SlaveData remaining = new SlaveData();
+            remaining.setBeginIndex(s.getLastCheckedIndex());
+            remaining.setEndIndex(s.getEndIndex());
+            failed.put(nFailed, remaining);
+        }
+        
+        slaves.remove(slaveKey);
+        slaveID.remove(s.getName());
+        
 
                 //falta interromper a thread dele
-                threads.get(s.getId()).interrupt();
-                threads.remove(s.getId());
+        threads.get(s.getId()).interrupt();
+        threads.remove(s.getId());
 
-                System.out.println("Escravo" + s.getName() + "removido.");
-            }
-        }
-
-    @Override
-    public void foundGuess(long currentindex, Guess currentguess) throws RemoteException {
-        System.out.println("Nova possível chave encontrada: " + currentguess.getKey());
-        guessList.add(currentguess);
+        System.out.println("Escravo" + s.getName() + "removido.");
     }
+}
 
-    @Override
-    public void checkpoint(long currentindex) throws RemoteException {
+@Override
+public void foundGuess(long currentindex, Guess currentguess) throws RemoteException {
+    System.out.println("Nova possível chave encontrada: " + currentguess.getKey());
+    guessList.add(currentguess);
+}
+
+@Override
+public void checkpoint(long currentindex) throws RemoteException {
         //TODO
         //controlar os checkpoints de cada escravo e remove-los da fila em caso de falha
         //precisa criar uma thread que fique checando se cada escravo ultrapassou 20 continuamente
         //caso sim, retorna esse escravo pra ser removido
 
         //Procura em qual escravo esse checkpoint corresponde
-        for (Map.Entry<Integer, SlaveData> entry : slaves.entrySet()) {
-            if (currentindex >= entry.getValue().getBeginIndex() && currentindex <= entry.getValue().getEndIndex()) {
-                System.out.println("Checkpoint Escravo: " + entry.getValue().getName());
-                entry.getValue().setTime(System.nanoTime());
-                entry.getValue().setLastCheckedIndex(currentindex);
+    for (Map.Entry<Integer, SlaveData> entry : slaves.entrySet()) {
+        if (currentindex >= entry.getValue().getBeginIndex() && currentindex <= entry.getValue().getEndIndex()) {
+            System.out.println("Checkpoint Escravo: " + entry.getValue().getName());
+            entry.getValue().setTime(System.nanoTime());
+            entry.getValue().setLastCheckedIndex(currentindex);
 
                 // if(entry.getValue.getEndIndex == currentindex){
                 //     this.completed++;
@@ -237,51 +237,51 @@ public class MasterImpl implements Master {
 
                 //     }
                 // }
-            }
         }
-
     }
+
+}
 
     // Captura o CTRL+C
     //http://stackoverflow.com/questions/1611931/catching-ctrlc-in-java
-    public void attachShutDownHook() {
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
+public void attachShutDownHook() {
+    Runtime.getRuntime().addShutdownHook(new Thread() {
+        @Override
+        public void run() {
 
                 // Remove todos escravos da lista caso o mestre caia
-                for (Map.Entry<Integer, SlaveData> slave : slaves
-                        .entrySet()) {
-                    slaves.remove(slave.getKey());
-                }
-                System.out.println(" Mestre Caiu! :(");
-            }
-        });
+            for (Map.Entry<Integer, SlaveData> slave : slaves
+                .entrySet()) {
+                slaves.remove(slave.getKey());
+        }
+        System.out.println(" Mestre Caiu! :(");
     }
+});
+}
 
-    public static void main(String[] args) throws Exception {
+public static void main(String[] args) throws Exception {
 
-        try {
+    try {
             //igual trab1
-            String masterName = (args.length < 1) ? "mestre" : args[0];
+        String masterName = (args.length < 1) ? "mestre" : args[0];
 
-            if (args.length > 0) {
-                System.setProperty("java.rmi.server.hostname", args[0]);
-            }
+        if (args.length > 0) {
+            System.setProperty("java.rmi.server.hostname", args[0]);
+        }
 
-            Master master = new MasterImpl();
-            
-            Master stubRef = (Master) UnicastRemoteObject.exportObject(master, 2001);
+        Master master = new MasterImpl();
+        
+        Master stubRef = (Master) UnicastRemoteObject.exportObject(master, 2001);
 
-            final Registry registry = LocateRegistry.getRegistry();
-            registry.rebind(masterName, stubRef);
-            
-            System.out.println("Mestre está pronto...");
+        final Registry registry = LocateRegistry.getRegistry();
+        registry.rebind(masterName, stubRef);
+        
+        System.out.println("Mestre está pronto...");
 
             //TODO
             //lembrar de fazer o attachShutDownHook
-        } catch (Exception e) {
-            System.err.println("Mestre gerou exceção.");
-        }
+    } catch (Exception e) {
+        System.err.println("Mestre gerou exceção.");
     }
+}
 }
