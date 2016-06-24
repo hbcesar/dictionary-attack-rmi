@@ -4,6 +4,7 @@
 package br.inf.ufes.pp2016_01;
 
 import java.rmi.Remote;
+import java.rmi.RemoteException;
 
 public interface Attacker extends Remote {
 	
@@ -15,5 +16,5 @@ public interface Attacker extends Remote {
 	 * decritografada com chaves candidatas
 	 */
 	public Guess[] attack(byte[] ciphertext, 
-			byte[] knowntext);
+			byte[] knowntext) throws RemoteException;
 }

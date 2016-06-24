@@ -58,7 +58,7 @@ public class SlaveImpl implements Slave {
     }
 
     // Desregistra o escravo da lista do Mestre em caso de termino.
-    public void attachShutDownHook(final Master master) {
+    public void attachShutDownHook() {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
@@ -72,21 +72,25 @@ public class SlaveImpl implements Slave {
     }
 
     //Registre o escravo no mestre a cada 30s
-    private void registerSlave() {
+    private void registerSlave(Slave stub, Master master, Registry registry, SlaveImpl escravo) {
         Timer scheduler = new Timer();
-        TimerTask masterRegister = new MasterRegister(this, master);
+        TimerTask masterRegister = new MasterRegister(stub, master, registry, escravo);
         scheduler.scheduleAtFixedRate(masterRegister, 30000, 30000);
     }
 
     //Inner class que realiza o registro do mestre a cada 30s
     private class MasterRegister extends TimerTask {
 
-        private final SlaveImpl s;
+        private final Slave stub;
+        private final SlaveImpl escravo;
         private final Master master;
+        private final Registry registry;
 
-        public MasterRegister(SlaveImpl s, Master m) {
-            this.s = s;
+        public MasterRegister(Slave s, Master m, Registry registry, SlaveImpl escravo) {
+            this.stub = s;
             this.master = m;
+            this.registry = registry;
+            this.escravo = escravo;
         }
 
         //Procura pelo mestre
@@ -94,24 +98,27 @@ public class SlaveImpl implements Slave {
             Master mestre = new MasterImpl();
 
             try {
-                Registry registry = LocateRegistry.getRegistry(masterName);
-                mestre = (Master) registry.lookup("ReferenciaMestre");
+                // Registry registry = LocateRegistry.getRegistry(masterName);
+                mestre = (Master) registry.lookup("mestre");
             } catch (RemoteException | NotBoundException ex) {
                 Logger.getLogger(SlaveImpl.class.getName()).log(Level.SEVERE, null, ex);
             }
             return mestre;
         }
 
+// Registry registry = LocateRegistry.getRegistry(host);
+//             mestre = (Master) registry.lookup("mestre");
+//             SlaveImpl escravo = new SlaveImpl(args[1]);
         @Override
         public void run() {
             try {
-                final Slave stub = (Slave) UnicastRemoteObject.exportObject(this.s, 0);
+                // final Slave stub = (Slave) UnicastRemoteObject.exportObject(this.s, 0);
                 master.addSlave(stub, name);
             } catch (RemoteException ex) {
                 try {
-                    Master m = searchMaster("master");
-                    final Slave stub = (Slave) UnicastRemoteObject.exportObject(this.s, 0);
-                    this.s.setId(m.addSlave(stub, name));
+                    Master m = searchMaster("mestre");
+                    // final Slave stub = (Slave) UnicastRemoteObject.exportObject(this.s, 0);
+                    this.escravo.setId(m.addSlave(stub, name));
                 } catch (RemoteException ex1) {
                     Logger.getLogger(SlaveImpl.class.getName()).log(Level.SEVERE, null, ex1);
                 }
@@ -146,7 +153,7 @@ public class SlaveImpl implements Slave {
             //Procura Mestre no Registry
             System.out.println(host);
             Registry registry = LocateRegistry.getRegistry(host);
-            mestre = (Master) registry.lookup("ReferenciaMestre");
+            mestre = (Master) registry.lookup("mestre");
             SlaveImpl escravo = new SlaveImpl(args[1]);
 
             //cria stub do escravo
@@ -156,8 +163,20 @@ public class SlaveImpl implements Slave {
             mestre.addSlave(stub, escravo.getName());
 
             //"Attach" o metodo que executa operacoes necessarias caso o escravo finalize
-            escravo.attachShutDownHook(mestre);
-            escravo.registerSlave(); //slave ira se registrar a cada 30s
+            // escravo.attachShutDownHook(mestre);
+            escravo.registerSlave(stub, mestre, registry, escravo); //slave ira se registrar a cada 30s
+
+            Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                try {
+                    Master master = (Master) registry.lookup("mestre");
+                    master.removeSlave((int) getId());
+                } catch (Exception ex) {
+                    Logger.getLogger(SlaveImpl.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        });
 
         } catch (RemoteException | NotBoundException e) {
             e.printStackTrace();

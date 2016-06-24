@@ -14,7 +14,7 @@ import java.util.Iterator;
 import java.util.List;
 
 public class MasterImpl implements Master {
-    private Map<Integer, ThreadMestreEscravo> threads = new HashMap();
+    private Map<Integer, ThreadMestreEscravo> threads = new HashMap<>();
     private MasterCheckpoint masterCheckpoint;
 
     private static List<String> dictionary = new ArrayList<>();
@@ -269,7 +269,7 @@ public static void main(String[] args) throws Exception {
             System.setProperty("java.rmi.server.hostname", args[0]);
         }
 
-        Master master = new MasterImpl();
+        MasterImpl master = new MasterImpl();
         
         Master stubRef = (Master) UnicastRemoteObject.exportObject(master, 2001);
 
@@ -280,6 +280,8 @@ public static void main(String[] args) throws Exception {
 
             //TODO
             //lembrar de fazer o attachShutDownHook
+        // master = (MasterImpl) master;
+        master.attachShutDownHook();
     } catch (Exception e) {
         System.err.println("Mestre gerou exceção.");
     }

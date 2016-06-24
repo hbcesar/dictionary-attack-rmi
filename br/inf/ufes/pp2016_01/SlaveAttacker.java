@@ -13,7 +13,9 @@ import javax.crypto.spec.SecretKeySpec;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class SlaveAttacker extends Thread {
+// public class SlaveAttacker extends Thread {
+public class SlaveAttacker {
+
 
   private static List<String> dictionary = new ArrayList<>();
   private long currentIndex;
@@ -47,7 +49,7 @@ public class SlaveAttacker extends Thread {
   private void readDictionary() {
     try {
       BufferedReader br;
-      br = new BufferedReader(new FileReader("dictionary.txt"));
+      br = new BufferedReader(new FileReader("/tmp/dictionary.txt"));
 
       //palavra lida
       String word;
@@ -58,7 +60,7 @@ public class SlaveAttacker extends Thread {
 
       br.close();
     } catch (IOException ex) {
-      System.out.println("Escravo " + this.getId() + ": arquivo de dicionário não encontrado.");
+      System.out.println("Escravo: arquivo de dicionário não encontrado.");
     }
   }
 
@@ -77,11 +79,11 @@ public class SlaveAttacker extends Thread {
       return decrypted;
 
     } catch (javax.crypto.BadPaddingException e) {
-      System.out.println("Senha invalida.");
+      // System.out.println("Senha invalida.");
       return null;
 
     } catch (Exception e) {
-      System.out.println("Escravo " + this.getId() + ": erro na descriptografia.");
+      System.out.println("Escravo: erro na descriptografia.");
       return null;
     }
   }
@@ -104,50 +106,62 @@ public class SlaveAttacker extends Thread {
     byte[] decrypted_message;
     long begin = (long) initialwordindex;
     long end = (long) finalwordindex;
+    readDictionary();
+
+    if(dictionary.size() == 0){
+      System.out.println("Erro leitura dicionario!");
+    }
 
     /**
     * Código que realiza checkpoint
     * Baseado em: http://www.tutorialspoint.com/java/util/timer_scheduleatfixedrate_delay.htm
     */
     Timer scheduler = new Timer();
-    TimerTask checkpointer = new Checkpointer(this.callbackinterface);
-    scheduler.scheduleAtFixedRate(checkpointer, 20000, 20000);
+    TimerTask checkpointer = new Checkpointer(this.callbackinterface, this);
+    scheduler.scheduleAtFixedRate(checkpointer, 0, 10000);
+    System.out.println(currentIndex);
 
     for (currentIndex = begin; currentIndex <= end; currentIndex += 1) {
       key = dictionary.get((int)currentIndex);
       decrypted_message = decrypt(key.getBytes());
 
-      if (checkGuess(decrypted_message)) {
+      if (decrypted_message != null && checkGuess(decrypted_message)) {
         Guess guess = new Guess();
         guess.setKey(key);
         guess.setMessage(decrypted_message);
         callbackinterface.foundGuess(currentIndex, guess);
+        System.out.println("Achei: " + key);
       }
     }
+
+    System.out.println("Done");
+    scheduler.cancel();
   }
 
-  @Override
-  public void run() {
+  // @Override
+  // public void run() {
 
-    try {
-      startSubAttack();
-    } catch (RemoteException e) {
-      e.printStackTrace();
-    }
-  }
+  //   try {
+  //     startSubAttack();
+  //   } catch (RemoteException e) {
+  //     e.printStackTrace();
+  //   }
+  // }
 
   //Inner class que realiza checkpoint a cada 20s
   private class Checkpointer extends TimerTask {
     private SlaveManager callbackinterface;
-    
-    public Checkpointer(SlaveManager c){
+    private SlaveAttacker slaveAttacker;
+
+    public Checkpointer(SlaveManager c, SlaveAttacker slaveAttacker){
       this.callbackinterface = c;
+      this.slaveAttacker = slaveAttacker;
     }
     
     @Override
     public void run() {
       try {
-        callbackinterface.checkpoint((long) SlaveAttacker.this.getCurrentIndex());
+        callbackinterface.checkpoint((long) this.slaveAttacker.getCurrentIndex());
       } catch (RemoteException ex) {
         Logger.getLogger(SlaveAttacker.class.getName()).log(Level.SEVERE, null, ex);
       }
