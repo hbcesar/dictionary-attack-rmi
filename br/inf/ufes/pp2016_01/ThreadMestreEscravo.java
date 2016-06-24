@@ -1,17 +1,6 @@
 package br.inf.ufes.pp2016_01;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
 import java.rmi.RemoteException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
-import javax.crypto.Cipher;
-import javax.crypto.spec.SecretKeySpec;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class ThreadMestreEscravo extends Thread {
 
@@ -35,7 +24,7 @@ public class ThreadMestreEscravo extends Thread {
     public void run() {
 
         try {
-            slave.startSubAttack(ciphertext, knowntext, inicio, fim, this);
+            slave.startSubAttack(ciphertext, knowntext, initialwordindex, finalwordindex, callbackinterface);
         } catch (RemoteException e) {
             e.printStackTrace();
         }

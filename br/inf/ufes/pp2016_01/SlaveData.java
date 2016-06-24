@@ -8,7 +8,6 @@ public class SlaveData {
     private long lastCheckedIndex;
     private String name;
     private Slave slaveReference;
-    private boolean working;
     
     public SlaveData(Slave slaveReference, String name, long id){
         this.slaveReference = slaveReference;
@@ -76,7 +75,7 @@ public class SlaveData {
         this.slaveReference = slaveReference;
     }
     
-    public boolean isWorking(){
-        return this.working;
+    public boolean hasFinished(){
+        return this.endIndex == this.lastCheckedIndex;
     }
 }
