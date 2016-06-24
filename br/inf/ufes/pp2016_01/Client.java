@@ -23,8 +23,8 @@ public class Client {
 	    }
 	*/
 	    String hostname = (args.length < 3) ? null : args[2];
-	    String filename = args[0];
-	    String knownword = args[1];
+	    // String filename = args[0];
+	    String knownword = args[0];
 	    String name = "mestre";
             String msg = "A pipa do vovô não sobe mais.";
 	    byte[] ciphertext = msg.getBytes();

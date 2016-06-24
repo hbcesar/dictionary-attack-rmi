@@ -98,7 +98,7 @@ public class MasterImpl implements Master {
         for (int key : keysList) {
             threads.remove(key);
         }
-        
+
         //se chegou até aqui, significa que os escravos terminaram de alguma forma (compeltaram ou falharam)
         //entao, verifica se existe trabalho a ser redistribuido
         // for(Map.Entry<Integer, SlaveData> e : failed.entrySet()){
@@ -106,7 +106,7 @@ public class MasterImpl implements Master {
         
         // }
         
-        
+        //Problema no guess que pode ser nulo!
         for (int i = 0; i < guessList.size(); i++) {
          guesses[i] = guessList.get(i);
      }
