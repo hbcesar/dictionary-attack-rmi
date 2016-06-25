@@ -44,8 +44,6 @@ public class MasterImpl implements Master {
             System.out.println("Dicionário não foi lido corretamente.");
         }
         
-        Guess[] guesses = null;
-        
         done = false;
         
         long tamVetor = dictionary.size();
@@ -105,11 +103,12 @@ public class MasterImpl implements Master {
         rearrangeAttack(ciphertext, knowntext);
         
         // }
-        
+        Guess[] guesses = new Guess[guessList.size()];
         //Problema no guess que pode ser nulo!
-        for (int i = 0; i < guessList.size(); i++) {
-         guesses[i] = guessList.get(i);
-     }
+//        for (int i = 0; i < guessList.size(); i++) {
+//         guesses[i] = guessList.get(i);
+        guesses = guessList.toArray(guesses);
+     //}
      
      done = true;
      
@@ -148,7 +147,7 @@ public class MasterImpl implements Master {
 public void readDictionary() {
     try {
         BufferedReader br;
-        br = new BufferedReader(new FileReader("/tmp/dictionary.txt"));
+        br = new BufferedReader(new FileReader("dictionary.txt"));
 
             //palavra lida
         String word;
@@ -206,8 +205,8 @@ public synchronized void removeSlave(int slaveKey) throws RemoteException {
         
 
                 //falta interromper a thread dele
-        threads.get(s.getId()).interrupt();
-        threads.remove(s.getId());
+        threads.get((int)s.getId()).interrupt();
+        threads.remove((int)s.getId());
 
         System.out.println("Escravo" + s.getName() + "removido.");
     }

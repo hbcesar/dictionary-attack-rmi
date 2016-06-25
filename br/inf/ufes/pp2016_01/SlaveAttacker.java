@@ -49,7 +49,7 @@ public class SlaveAttacker {
   private void readDictionary() {
     try {
       BufferedReader br;
-      br = new BufferedReader(new FileReader("/tmp/dictionary.txt"));
+      br = new BufferedReader(new FileReader("dictionary.txt"));
 
       //palavra lida
       String word;
