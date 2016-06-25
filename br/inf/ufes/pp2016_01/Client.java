@@ -78,7 +78,7 @@ hostname = args[0];
             byte[] key = args[0].getBytes();
 
             String name = "mestre";
-            byte[] knownword = "d'aiguillage".getBytes();
+            byte[] knownword = "jolie".getBytes();
             byte[] ciphertext = encrypt(key, args[1]);
 
             try {
