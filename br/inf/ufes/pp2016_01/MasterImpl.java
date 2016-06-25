@@ -220,11 +220,12 @@ public synchronized void attachShutDownHook() {
         @Override
         public void run() {
 
-                // Remove todos escravos da lista caso o mestre caia
-            for (Map.Entry<Integer, SlaveData> slave : slaves
-                .entrySet()) {
+            // Remove todos escravos da lista caso o mestre caia
+            for (Iterator<Map.Entry<Integer, SlaveData>> it = slaves
+                    .entrySet().iterator(); it.hasNext();) {
+                Map.Entry<Integer, SlaveData> slave = it.next();
                 slaves.remove(slave.getKey());
-        }
+            }
         System.out.println(" Mestre Caiu! :(");
     }
 });

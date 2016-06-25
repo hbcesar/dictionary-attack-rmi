@@ -122,7 +122,7 @@ public class SlaveAttacker {
     System.out.println(currentIndex);
 
     for (currentIndex = begin; currentIndex <= end; currentIndex += 1) {
-      key = dictionary.get((int)currentIndex);
+      key = dictionary.get((int)currentIndex);  //Arrayoutofbounds
       decrypted_message = decrypt(key.getBytes());
 
       if (decrypted_message != null && checkGuess(decrypted_message)) {
@@ -136,6 +136,7 @@ public class SlaveAttacker {
 
     System.out.println("Done");
     scheduler.cancel();
+    checkpointer.cancel();
   }
 
   // @Override

@@ -1,0 +1,5 @@
+javac -cp . br/inf/ufes/pp2016_01/*.java
+
+java -cp . -Djava.rmi.server.hostname=$host br.inf.ufes.pp2016_01.SlaveImpl $host escravinho
+java -cp . -Djava.rmi.server.hostname=$host br.inf.ufes.pp2016_01.MasterImpl
+java -cp . -Djava.rmi.hostname=$host br.inf.ufes.pp2016_01.Client house lepetitprince.txt $host

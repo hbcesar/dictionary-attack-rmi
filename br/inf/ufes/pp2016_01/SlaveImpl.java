@@ -20,6 +20,9 @@ public class SlaveImpl implements Slave {
     private Master master;
 
     private Thread thread;
+    
+    private Timer scheduler;
+    private TimerTask masterRegister;
 
     public SlaveImpl(String name) {
         this.name = name;
@@ -50,11 +53,13 @@ public class SlaveImpl implements Slave {
      */
     @Override
     public void startSubAttack(byte[] ciphertext, byte[] knowntext, long initialwordindex, long finalwordindex, SlaveManager callbackinterface) throws RemoteException {
+        System.out.println("Comecei");
         SlaveAttacker exec = new SlaveAttacker(ciphertext, knowntext, initialwordindex, finalwordindex, callbackinterface);
         // Thread thread = new Thread(exec);
         // this.thread = thread;
         // thread.start();
         exec.startSubAttack();
+        System.out.println("Acabei");
     }
 
     // Desregistra o escravo da lista do Mestre em caso de termino.
@@ -73,10 +78,16 @@ public class SlaveImpl implements Slave {
 
     //Registre o escravo no mestre a cada 30s
     private void registerSlave(Slave stub, Master master, Registry registry, SlaveImpl escravo) {
-        Timer scheduler = new Timer();
-        TimerTask masterRegister = new MasterRegister(stub, master, registry, escravo);
+        this.scheduler = new Timer();
+        this.masterRegister = new MasterRegister(stub, master, registry, escravo);
         scheduler.scheduleAtFixedRate(masterRegister, 30000, 30000);
     }
+    
+    private void unregisterSlave(){
+        this.scheduler.cancel();
+        this.masterRegister.cancel();
+    }
+    
 
     //Inner class que realiza o registro do mestre a cada 30s
     private class MasterRegister extends TimerTask {
@@ -148,7 +159,7 @@ public class SlaveImpl implements Slave {
         //Escravo recebe referencia para o mestre
 //        if (args.length > 0) {
 //            System.setProperty("java.rmi.server.hostname", args[0]);
-//        }
+//        }        
         try {
             //Procura Mestre no Registry
             System.out.println(host);
@@ -172,7 +183,8 @@ public class SlaveImpl implements Slave {
                 try {
                     Master master = (Master) registry.lookup("mestre");
                     master.removeSlave((int) getId());
-                } catch (Exception ex) {
+                    escravo.unregisterSlave();
+                } catch (RemoteException | NotBoundException ex) {
                     Logger.getLogger(SlaveImpl.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
