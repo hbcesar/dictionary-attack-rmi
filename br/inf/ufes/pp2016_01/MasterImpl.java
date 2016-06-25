@@ -39,11 +39,6 @@ public class MasterImpl implements Master {
     @Override
     public Guess[] attack(byte[] ciphertext, byte[] knowntext) {
         this.readDictionary();
-        // List<Guess> guesses = new ArrayList<Guess>();
-        if(dictionary.size() == 0){
-            System.out.println("Dicionário não foi lido corretamente.");
-        }
-        
         done = false;
         
         long tamVetor = dictionary.size();
@@ -66,17 +61,10 @@ public class MasterImpl implements Master {
             slaveData.setEndIndex(fim);
             
 
-            // try {
             ThreadMestreEscravo thread = new ThreadMestreEscravo(slave, ciphertext, knowntext, inicio, fim -1, this);
             threads.put((int)slaveData.getId(), thread);
             slaveData.setTime(System.nanoTime());
             thread.start();
-
-
-                // slave.startSubAttack(ciphertext, knowntext, inicio, fim, this);
-            // } catch (RemoteException ex) {
-            //     Logger.getLogger(MasterImpl.class.getName()).log(Level.SEVERE, null, ex);
-            // }
 
             inicio = fim;
             fim += tamVetorEscravos;
@@ -84,31 +72,31 @@ public class MasterImpl implements Master {
         
         masterCheckpoint = new MasterCheckpoint(this, slaves);
         masterCheckpoint.start();
-        List<Integer> keysList = new ArrayList<Integer>();
+        
+//        List<Integer> keysList = new ArrayList<Integer>();
+        
         for (Map.Entry<Integer, ThreadMestreEscravo> e : threads.entrySet()){
             try {
                 e.getValue().join();
-                keysList.add(e.getKey());
+//                keysList.add(e.getKey());
             } catch (InterruptedException err) {
                 err.printStackTrace();
             }
         }
-        for (int key : keysList) {
-            threads.remove(key);
-        }
+        
+//        for (int key : keysList) {
+//            threads.remove(key);
+//        }
+        threads.clear();
 
         //se chegou até aqui, significa que os escravos terminaram de alguma forma (compeltaram ou falharam)
         //entao, verifica se existe trabalho a ser redistribuido
-        // for(Map.Entry<Integer, SlaveData> e : failed.entrySet()){
         rearrangeAttack(ciphertext, knowntext);
         
-        // }
+        masterCheckpoint.interrupt();
+        
         Guess[] guesses = new Guess[guessList.size()];
-        //Problema no guess que pode ser nulo!
-//        for (int i = 0; i < guessList.size(); i++) {
-//         guesses[i] = guessList.get(i);
         guesses = guessList.toArray(guesses);
-     //}
      
      done = true;
      
@@ -167,7 +155,7 @@ public void readDictionary() {
 public synchronized int addSlave(Slave s, String slavename) throws RemoteException {
 
     if (slaveID.containsKey(slavename)) {
-        System.out.println("Registro de escravo atualizado.");
+        System.out.println("Registro do escravo" + slavename +  " atualizado.");
 
         return slaveID.get(slavename);
     } else {
@@ -175,7 +163,7 @@ public synchronized int addSlave(Slave s, String slavename) throws RemoteExcepti
         slaves.put(nSlaves, slaveData);
         slaveID.put(slavename, nSlaves);
 
-        System.out.println("Escravo" + slavename + "adicionado.");
+        System.out.println("Escravo " + slavename + " adicionado.");
 
         return nSlaves++;
     }
@@ -185,12 +173,6 @@ public synchronized int addSlave(Slave s, String slavename) throws RemoteExcepti
 @Override
 public synchronized void removeSlave(int slaveKey) throws RemoteException {
     if (slaveID.containsValue(slaveKey)) {
-            // if (!slaves.get(slaveKey).isWorking()) {
-                // slaves.remove(slaveKey);
-                // slaveID.remove(slaves.get(slaveKey).getName());
-
-                // System.out.println("Escravo " + slaveKey + " removido.");
-            // } else {
         SlaveData s = slaves.get(slaveKey);
         
         if(!s.hasFinished()){
@@ -202,13 +184,12 @@ public synchronized void removeSlave(int slaveKey) throws RemoteException {
         
         slaves.remove(slaveKey);
         slaveID.remove(s.getName());
-        
 
-                //falta interromper a thread dele
+        //falta interromper a thread dele
         threads.get((int)s.getId()).interrupt();
         threads.remove((int)s.getId());
 
-        System.out.println("Escravo" + s.getName() + "removido.");
+        System.out.println("Escravo " + s.getName() + " removido.");
     }
 }
 
@@ -220,10 +201,6 @@ public void foundGuess(long currentindex, Guess currentguess) throws RemoteExcep
 
 @Override
 public void checkpoint(long currentindex) throws RemoteException {
-        //TODO
-        //controlar os checkpoints de cada escravo e remove-los da fila em caso de falha
-        //precisa criar uma thread que fique checando se cada escravo ultrapassou 20 continuamente
-        //caso sim, retorna esse escravo pra ser removido
 
         //Procura em qual escravo esse checkpoint corresponde
     for (Map.Entry<Integer, SlaveData> entry : slaves.entrySet()) {
@@ -231,14 +208,6 @@ public void checkpoint(long currentindex) throws RemoteException {
             System.out.println("Checkpoint Escravo: " + entry.getValue().getName());
             entry.getValue().setTime(System.nanoTime());
             entry.getValue().setLastCheckedIndex(currentindex);
-
-                // if(entry.getValue.getEndIndex == currentindex){
-                //     this.completed++;
-
-                //     if(this.completed >= slaves.size()){
-
-                //     }
-                // }
         }
     }
 
@@ -246,7 +215,7 @@ public void checkpoint(long currentindex) throws RemoteException {
 
     // Captura o CTRL+C
     //http://stackoverflow.com/questions/1611931/catching-ctrlc-in-java
-public void attachShutDownHook() {
+public synchronized void attachShutDownHook() {
     Runtime.getRuntime().addShutdownHook(new Thread() {
         @Override
         public void run() {
@@ -264,8 +233,7 @@ public void attachShutDownHook() {
 public static void main(String[] args) throws Exception {
 
     try {
-            //igual trab1
-        String masterName = (args.length < 1) ? "mestre" : args[0];
+        String masterName = "mestre";
 
         if (args.length > 0) {
             System.setProperty("java.rmi.server.hostname", args[0]);
@@ -281,8 +249,6 @@ public static void main(String[] args) throws Exception {
         System.out.println("Mestre está pronto...");
 
             //TODO
-            //lembrar de fazer o attachShutDownHook
-        // master = (MasterImpl) master;
         master.attachShutDownHook();
     } catch (Exception e) {
         System.err.println("Mestre gerou exceção.");
