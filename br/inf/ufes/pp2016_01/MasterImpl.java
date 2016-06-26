@@ -25,7 +25,7 @@ public class MasterImpl implements Master {
     private Map<Integer, SlaveData> failed = new HashMap<>();
     private Map<String, Integer> failedNames = new HashMap<>();
     private Map<String, Integer> slaveID = new HashMap<>();
-    private List<Guess> guessList = new ArrayList<Guess>();
+    private List<Guess> guessList = new ArrayList<>();
 
     private int nSlaves = 0;
     private int nFailed = 0;
@@ -75,28 +75,20 @@ public class MasterImpl implements Master {
             fim += tamVetorEscravos;
         }
 
-        
-//        masterCheckpoint.start();
+        masterCheckpoint.start();
 
-//        List<Integer> keysList = new ArrayList<Integer>();
-//        synchronized (this) {
         Map<Integer, ThreadMestreEscravo> threads_cpy = new HashMap<>(threads);
         for (Map.Entry<Integer, ThreadMestreEscravo> e : threads_cpy.entrySet()) {
             try {
                 e.getValue().join();
-//                threads.remove(e.getKey());
             } catch (InterruptedException err) {
 //                err.printStackTrace();
                 System.out.println("Erro ao fazer join de threads no mestre.");
             }
         }
-//        }
 
-//        for (int key : keysList) {
-//            threads.remove(key);
-//        }
         threads.clear();
-//        masterCheckpoint.interrupt();
+        masterCheckpoint.interrupt();
 
         //se chegou até aqui, significa que os escravos terminaram de alguma forma (compeltaram ou falharam)
         //entao, verifica se existe trabalho a ser redistribuido
@@ -146,7 +138,6 @@ public class MasterImpl implements Master {
         for (Map.Entry<Integer, ThreadMestreEscravo> e : threads.entrySet()) {
             try {
                 e.getValue().join();
-//                threads.remove(e.getKey());
             } catch (InterruptedException err) {
 //                err.printStackTrace();
                 System.out.println("Erro aguardando threads apos redistribuição");
@@ -192,7 +183,7 @@ public class MasterImpl implements Master {
             SlaveData slaveData = new SlaveData(s, slavename, nSlaves);
             slaves.put(nSlaves, slaveData);
             slaveID.put(slavename, nSlaves);
-            
+
             int failedId = failedNames.get(slavename);
             failedNames.remove(slavename);
             failed.remove(failedId);
@@ -205,13 +196,12 @@ public class MasterImpl implements Master {
             slaves.put(nSlaves, slaveData);
             slaveID.put(slavename, nSlaves);
 
-            System.out.println("Escravo " + slavename + " adicionado.");
+            System.out.println("Escravo " + slavename + " adicionado (ID: " + slaveData.getId() + ")");
 
             return nSlaves++;
         }
     }
 
-    //TODO melhorar aqui
     @Override
     public synchronized void removeSlave(int slaveKey) throws RemoteException {
         if (slaves.containsKey(slaveKey)) {
@@ -232,7 +222,6 @@ public class MasterImpl implements Master {
             slaves.remove(slaveKey);
             slaveID.remove(s.getName());
 
-            //falta interromper a thread dele, caso haja alguma executando
             if (threads.containsKey(slaveKey)) {
                 threads.get((int) s.getId()).interrupt();
                 threads.remove((int) s.getId());
@@ -270,13 +259,6 @@ public class MasterImpl implements Master {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
-
-                // Remove todos escravos da lista caso o mestre caia
-//                for (Iterator<Map.Entry<Integer, SlaveData>> it = slaves
-//                        .entrySet().iterator(); it.hasNext();) {
-//                    Map.Entry<Integer, SlaveData> slave = it.next();
-//                    slaves.remove(slave.getKey());
-//                }
                 System.out.println(" Mestre Caiu! :(");
             }
         });

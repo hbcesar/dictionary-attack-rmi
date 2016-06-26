@@ -49,10 +49,6 @@ public class SlaveAttacker {
         this.callbackinterface = callbackinterface;
     }
 
-    /**
-     * **** Getters and Setters *******
-     *
-     */
     public long getCurrentIndex() {
         return currentIndex;
     }
@@ -148,19 +144,10 @@ public class SlaveAttacker {
             }
         }
 
-        System.out.println("Done");
         checkpointer.cancel();
         scheduler.cancel();
     }
 
-    // @Override
-    // public void run() {
-    //   try {
-    //     startSubAttack();
-    //   } catch (RemoteException e) {
-    //     e.printStackTrace();
-    //   }
-    // }
     //Inner class que realiza checkpoint a cada 20s
     private class Checkpointer extends TimerTask {
 

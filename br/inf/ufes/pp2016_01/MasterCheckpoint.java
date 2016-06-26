@@ -1,19 +1,11 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package br.inf.ufes.pp2016_01;
 
 import java.rmi.RemoteException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- *
- * @author hbcesar
- */
 public class MasterCheckpoint extends Thread {
 
     private MasterImpl master;
@@ -29,20 +21,23 @@ public class MasterCheckpoint extends Thread {
         while (!master.isDone()) {
             try {
                 Thread.sleep(1000);
-                for (Map.Entry<Integer, SlaveData> e : slaves.entrySet()) {
+                Map<Integer, SlaveData> slavex = new HashMap<>(slaves);
+                for (Map.Entry<Integer, SlaveData> e : slavex.entrySet()) {
                     SlaveData s = e.getValue();
                     long currentTime = System.nanoTime()/1000000000;
                     long lastCheckedTime = (long) s.getTime();
                     long TimeBetweenCheckpoints = currentTime - lastCheckedTime;
                     boolean slaveWorking = !e.getValue().hasFinished();
                     if (TimeBetweenCheckpoints > 20.0 && slaveWorking) {
-                        System.out.println("Escravo vai ser removido checkpoint: " + s.getName());
+                        System.out.println("Escravo vai ser removido por atraso em checkpoint: " + s.getName());
                         master.removeSlave((int) s.getId());
                     }
                 }
-            } catch (RemoteException | InterruptedException ex) {
+            } catch (RemoteException e) {
                 System.out.println("Erro ao criar thread verificadora de checkpoints no mestre.");
                 //Logger.getLogger(MasterCheckpoint.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (InterruptedException ex){
+                
             }
         }
     }
