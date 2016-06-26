@@ -20,7 +20,7 @@ public class SlaveImpl implements Slave {
     private Master master;
 
     private Thread thread;
-    
+
     private Timer scheduler;
     private TimerTask masterRegister;
 
@@ -58,36 +58,37 @@ public class SlaveImpl implements Slave {
         // Thread thread = new Thread(exec);
         // this.thread = thread;
         // thread.start();
+        exec.setInitialwordindex(initialwordindex);
+        exec.setFinalwordindex(finalwordindex);
         exec.startSubAttack();
         System.out.println("Acabei");
     }
 
     // Desregistra o escravo da lista do Mestre em caso de termino.
-    public void attachShutDownHook() {
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                try {
-                    master.removeSlave((int) getId());
-                } catch (RemoteException ex) {
-                    Logger.getLogger(SlaveImpl.class.getName()).log(Level.SEVERE, null, ex);
-                }
-            }
-        });
-    }
-
+//    public void attachShutDownHook() {
+//        Runtime.getRuntime().addShutdownHook(new Thread() {
+//            @Override
+//            public void run() {
+//                try {
+//                    master.removeSlave((int) getId());
+//                    
+//                } catch (RemoteException ex) {
+//                    System.out.println("Escravo saindo.. porém não consegui informar ao mestre sobre isso.");
+//                }
+//            }
+//        });
+//    }
     //Registre o escravo no mestre a cada 30s
     private void registerSlave(Slave stub, Master master, Registry registry, SlaveImpl escravo) {
         this.scheduler = new Timer();
         this.masterRegister = new MasterRegister(stub, master, registry, escravo);
-        scheduler.scheduleAtFixedRate(masterRegister, 30000, 30000);
+        scheduler.scheduleAtFixedRate(masterRegister, 10000, 10000);
     }
-    
-    private void unregisterSlave(){
-        this.scheduler.cancel();
+
+    private void unregisterSlave() {
         this.masterRegister.cancel();
+        this.scheduler.cancel();
     }
-    
 
     //Inner class que realiza o registro do mestre a cada 30s
     private class MasterRegister extends TimerTask {
@@ -105,14 +106,15 @@ public class SlaveImpl implements Slave {
         }
 
         //Procura pelo mestre
-        private Master searchMaster(String masterName) {
+        private Master searchMaster() {
             Master mestre = new MasterImpl();
 
             try {
                 // Registry registry = LocateRegistry.getRegistry(masterName);
                 mestre = (Master) registry.lookup("mestre");
             } catch (RemoteException | NotBoundException ex) {
-                Logger.getLogger(SlaveImpl.class.getName()).log(Level.SEVERE, null, ex);
+                System.out.println("Escravo: " + this.escravo.getName() + " não consegui encontrar um mestre.");
+//                Logger.getLogger(SlaveImpl.class.getName()).log(Level.SEVERE, null, ex);
             }
             return mestre;
         }
@@ -127,11 +129,12 @@ public class SlaveImpl implements Slave {
                 master.addSlave(stub, name);
             } catch (RemoteException ex) {
                 try {
-                    Master m = searchMaster("mestre");
+                    Master m = searchMaster();
                     // final Slave stub = (Slave) UnicastRemoteObject.exportObject(this.s, 0);
-                    this.escravo.setId(m.addSlave(stub, name));
+                    m.addSlave(stub, name);
                 } catch (RemoteException ex1) {
-                    Logger.getLogger(SlaveImpl.class.getName()).log(Level.SEVERE, null, ex1);
+                    System.out.println("Escravo " + this.escravo.getName() + ": não consigo achar um mestre no host especificado ;(");
+//                    Logger.getLogger(SlaveImpl.class.getName()).log(Level.SEVERE, null, ex1);
                 }
             }
         }
@@ -143,9 +146,9 @@ public class SlaveImpl implements Slave {
          essa operação é necessária para que o escravo consiga se
          registrar na fila gerenciada pelo mestre.
          */
-         Master mestre;
+        Master mestre;
 
-         if (args.length < 2) {
+        if (args.length < 2) {
             System.out.println("Parâmetros inválidos, por favor, forneça referencia ao mestre e nome do escravo (nessa ordem)");
         }
 
@@ -171,27 +174,30 @@ public class SlaveImpl implements Slave {
             Slave stub = (Slave) UnicastRemoteObject.exportObject(escravo, 0);
 
             //De acordo com especificação, escravo deve se registrar no menino mestre
-            mestre.addSlave(stub, escravo.getName());
+            int id = mestre.addSlave(stub, escravo.getName());
+            escravo.setId(id);
 
             //"Attach" o metodo que executa operacoes necessarias caso o escravo finalize
             // escravo.attachShutDownHook(mestre);
             escravo.registerSlave(stub, mestre, registry, escravo); //slave ira se registrar a cada 30s
 
             Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                try {
-                    Master master = (Master) registry.lookup("mestre");
-                    master.removeSlave((int) getId());
-                    escravo.unregisterSlave();
-                } catch (RemoteException | NotBoundException ex) {
-                    Logger.getLogger(SlaveImpl.class.getName()).log(Level.SEVERE, null, ex);
+                @Override
+                public void run() {
+                    try {
+                        Master master = (Master) registry.lookup("mestre");
+                        mestre.removeSlave(escravo.getId());
+                        escravo.unregisterSlave();
+                    } catch (RemoteException | NotBoundException ex) {
+//                    Logger.getLogger(SlaveImpl.class.getName()).log(Level.SEVERE, null, ex);
+                        System.out.println("Escravo " + escravo.getName() + " nao consegui me desregistrar no mestre");
+                    }
                 }
-            }
-        });
+            });
 
         } catch (RemoteException | NotBoundException e) {
-            e.printStackTrace();
+//            e.printStackTrace();
+            System.out.println("Escravo " + args[1] + ": nao consegui achar mestre no host especificado :(");
         }
     }
 }

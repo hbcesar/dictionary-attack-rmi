@@ -34,12 +34,15 @@ public class MasterCheckpoint extends Thread {
                     long currentTime = System.nanoTime()/1000000000;
                     long lastCheckedTime = (long) s.getTime();
                     long TimeBetweenCheckpoints = currentTime - lastCheckedTime;
-                    if (TimeBetweenCheckpoints > 20.0) {
+                    boolean slaveWorking = !e.getValue().hasFinished();
+                    if (TimeBetweenCheckpoints > 20.0 && slaveWorking) {
+                        System.out.println("Escravo vai ser removido checkpoint: " + s.getName());
                         master.removeSlave((int) s.getId());
                     }
                 }
             } catch (RemoteException | InterruptedException ex) {
-                Logger.getLogger(MasterCheckpoint.class.getName()).log(Level.SEVERE, null, ex);
+                System.out.println("Erro ao criar thread verificadora de checkpoints no mestre.");
+                //Logger.getLogger(MasterCheckpoint.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
     }

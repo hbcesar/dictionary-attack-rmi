@@ -10,12 +10,16 @@ public class SlaveData {
     private Slave slaveReference;
     
     public SlaveData(Slave slaveReference, String name, long id){
+        this.lastCheckedIndex = 0;
+        this.beginIndex = 0;
+        this.endIndex = 0;
         this.slaveReference = slaveReference;
         this.name = name;
         this.id = id;
     }
     
     public SlaveData(){
+        this.lastCheckedIndex = 0;
         
     }
 

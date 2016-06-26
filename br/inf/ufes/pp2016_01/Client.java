@@ -78,7 +78,7 @@ hostname = args[0];
             byte[] key = args[0].getBytes();
 
             String name = "mestre";
-            byte[] knownword = "jolie".getBytes();
+            byte[] knownword = "personnes".getBytes();
             byte[] ciphertext = encrypt(key, args[1]);
 
             try {
@@ -112,11 +112,12 @@ hostname = args[0];
 //                System.out.println(vetorInicial.size() + ";" + tempoExecucaoEstatico + ";" + tempoExecucao);
                 System.out.println(tempoExecucao);
             } catch (RemoteException | NotBoundException e) {
-                System.err.println("Erro encontrado (cliente): " + e.toString());
-                e.printStackTrace();
+                System.err.println("Erro no mestre, saindo..");
+//                e.printStackTrace();
             }
         } catch (Exception ex) {
-            Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
+            System.err.println("Erro encontrado no mestre, saindo..");
+//            Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
