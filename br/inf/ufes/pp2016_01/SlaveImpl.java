@@ -65,7 +65,7 @@ public class SlaveImpl implements Slave {
     private void registerSlave(Slave stub, Master master, Registry registry, SlaveImpl escravo, String name) {
         this.scheduler = new Timer();
         this.masterRegister = new MasterRegister(stub, master, registry, escravo, name);
-        scheduler.scheduleAtFixedRate(masterRegister, 10000, 10000);
+        scheduler.scheduleAtFixedRate(masterRegister, 10000, 30000);
     }
 
     private void unregisterSlave() {

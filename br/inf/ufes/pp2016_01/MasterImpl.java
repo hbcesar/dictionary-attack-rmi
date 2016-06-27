@@ -19,7 +19,7 @@ public class MasterImpl implements Master {
     private Map<Integer, ThreadMestreEscravo> threads = new HashMap<>();
 
     //Referencia a classe que realiza verificacao de checkpoints
-    private MasterCheckpoint masterCheckpoint;
+    //private MasterCheckpoint masterCheckpoint;
 
     //Palavras do dicionario
     private static List<String> dictionary = new ArrayList<>();
@@ -46,7 +46,6 @@ public class MasterImpl implements Master {
     private boolean done = true;
 
     public MasterImpl() {
-        masterCheckpoint = new MasterCheckpoint(this, slaves);
     }
 
     public boolean isDone() {
@@ -88,11 +87,14 @@ public class MasterImpl implements Master {
             slaveData.setTime(System.nanoTime());
             thread.start();
 
+            System.out.println("Passou aqui...");
+
             inicio = fim + 1;
             fim += tamVetorEscravos;
         }
 
         //divididos os trabalhos, executa thread para verificar checkpoints
+        MasterCheckpoint masterCheckpoint = new MasterCheckpoint(this, slaves);
         masterCheckpoint.start();
 
         Map<Integer, ThreadMestreEscravo> threads_cpy = new HashMap<>(threads);
@@ -179,7 +181,7 @@ public class MasterImpl implements Master {
         try {
             if (dictionary.isEmpty()) {
                 BufferedReader br;
-                br = new BufferedReader(new FileReader("dictionary.txt"));
+                br = new BufferedReader(new FileReader("/tmp/dictionary.txt"));
 
                 //palavra lida
                 String word;
