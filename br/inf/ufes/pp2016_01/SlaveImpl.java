@@ -1,5 +1,6 @@
 package br.inf.ufes.pp2016_01;
-
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -54,10 +55,10 @@ public class SlaveImpl implements Slave {
     @Override
     public void startSubAttack(byte[] ciphertext, byte[] knowntext, long initialwordindex, long finalwordindex, SlaveManager callbackinterface) throws RemoteException {
         System.out.println("Iniciando trabalho..");
-        SlaveAttacker exec = new SlaveAttacker(ciphertext, knowntext, initialwordindex, finalwordindex, callbackinterface);
-        exec.setInitialwordindex(initialwordindex);
-        exec.setFinalwordindex(finalwordindex);
-        exec.startSubAttack();
+        // SlaveAttacker exec = new SlaveAttacker(ciphertext, knowntext, initialwordindex, finalwordindex, callbackinterface);
+        // exec.setInitialwordindex(initialwordindex);
+        // exec.setFinalwordindex(finalwordindex);
+        // exec.startSubAttack();
         System.out.println("Terminado.");
     }
 
@@ -126,6 +127,7 @@ public class SlaveImpl implements Slave {
 
         } catch (RemoteException | NotBoundException e) {
             System.out.println("Escravo " + args[1] + ": nao consegui achar mestre no host especificado :(");
+            Logger.getLogger(SlaveImpl.class.getName()).log(Level.SEVERE, null, e);
         }
     }
 }

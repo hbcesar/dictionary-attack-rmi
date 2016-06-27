@@ -102,7 +102,7 @@ public class Sequencial {
     public void atacar() {
         readDictionary(); //le o dicionario
         startAttack(); //Inicia ataque
-        GuessPrinter.print(guesses); //Imprime guesses
+        // GuessPrinter.print(guesses); //Imprime guesses
     }
 
 }

@@ -140,10 +140,10 @@ public class Client {
                     //Imprime resultados em formato CSV
                     System.out.println("Tamanho do Arquivo;Tempo de Execução Estático;Tempo de Execução Distribuido");
 
-                    //long[] timeSequencial = new long[5];;
-                    long[] timeParalelo = new long[2];
+                    long[] timeSequencial = new long[2];;
+                    // long[] timeParalelo = new long[2];
 
-                    for (int i = 2000; i <= 60000; i += 1000) {
+                    for (int i = 20000; i <= 50000; i += 10000) {
                         createNewMsgFile(filename, msg, i);
 
                         String sfilename = filename.replace(".txt", "");
@@ -154,37 +154,37 @@ public class Client {
                         System.out.print(";");
 
                         //Executa processamento serial não paralelizado
-                        //Sequencial s = new Sequencial(ciphertext, msg.get(i).getBytes()); //Classe que realiza processamento sequencial
+                        Sequencial s = new Sequencial(ciphertext, "jesus".getBytes()); //Classe que realiza processamento sequencial
                         Guess g[] = null;
 
                         for(int j = 0; j < 2; j++){
-                            //long tempoInicialEstatico = System.nanoTime();
-                            //s.atacar();
-                            //long tempoFinalEstatico = System.nanoTime();
-                            //long tempoExecucaoEstatico = (long) ((tempoFinalEstatico - tempoInicialEstatico) / 1000000000.0);
-                            //timeSequencial[j] = tempoExecucaoEstatico;
+                            long tempoInicialEstatico = System.nanoTime();
+                            s.atacar();
+                            long tempoFinalEstatico = System.nanoTime();
+                            long tempoExecucaoEstatico = (long) ((tempoFinalEstatico - tempoInicialEstatico) / 1000000000.0);
+                            timeSequencial[j] = tempoExecucaoEstatico;
 
                             //Executa processamento paralelo
-                            long tempoInicial = System.nanoTime();
-                            g = stub.attack(ciphertext, msg.get(i).getBytes());
-                            long tempoFinal = System.nanoTime();
-                            long tempoExecucao = (long) ((tempoFinal - tempoInicial) / 1000000000.0);
-                            timeParalelo[j] = tempoExecucao;
+                            // long tempoInicial = System.nanoTime();
+                            // g = stub.attack(ciphertext, "jesus".getBytes());
+                            // long tempoFinal = System.nanoTime();
+                            // long tempoExecucao = (long) ((tempoFinal - tempoInicial) / 1000000000.0);
+                            // timeParalelo[j] = tempoExecucao;
                         }
 
-                        //long mediaSequencial = 0;
-                        long mediaParalelo = 0;
+                        long mediaSequencial = 0;
+                        // long mediaParalelo = 0;
                         for(int j = 0; j < 2; j++){
-                            //mediaSequencial += timeSequencial[j];
-                            mediaParalelo += timeParalelo[j];
+                            mediaSequencial += timeSequencial[j];
+                            // mediaParalelo += timeParalelo[j];
                         }
 
-                        //System.out.print(mediaSequencial/5.0);
+                        System.out.print(mediaSequencial/5.0);
                         //System.out.print(";");
-                        System.out.println(mediaParalelo/2.0);
+                        // System.out.println(mediaParalelo/2.0);
 
                         //Imprime guesses encontradas
-                        GuessPrinter.print(g);
+                        // GuessPrinter.print(g);
                     }
                 }
 

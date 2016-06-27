@@ -27,6 +27,7 @@ public class ThreadMestreEscravo extends Thread {
       slave.startSubAttack(ciphertext, knowntext, initialwordindex, finalwordindex, callbackinterface);
     } catch (RemoteException e) {
       System.out.println("Terminando thread pois escravo finalizou.");
+      e.printStackTrace();
     }
   }
 }
