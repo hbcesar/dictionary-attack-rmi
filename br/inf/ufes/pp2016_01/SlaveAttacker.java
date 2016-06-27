@@ -145,7 +145,8 @@ public class SlaveAttacker {
             }
         }
 
-        //Ao fim do trabalho, cancela checkpointer
+        //Ao fim do trabalho, faz ultimo checkpoint e cancela checkpointer
+        callbackinterface.checkpoint((long) currentIndex);
         checkpointer.cancel();
         scheduler.cancel();
     }

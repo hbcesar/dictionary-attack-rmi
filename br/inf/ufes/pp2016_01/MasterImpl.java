@@ -87,7 +87,7 @@ public class MasterImpl implements Master {
             slaveData.setTime(System.nanoTime());
             thread.start();
 
-            System.out.println("Passou aqui...");
+            // System.out.println("Passou aqui...");
 
             inicio = fim + 1;
             fim += tamVetorEscravos;

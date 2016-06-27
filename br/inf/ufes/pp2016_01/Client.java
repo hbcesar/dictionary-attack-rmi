@@ -56,7 +56,7 @@ public class Client {
         Cipher cipher = Cipher.getInstance("Blowfish");
         cipher.init(Cipher.ENCRYPT_MODE, keySpec);
 
-        System.out.println(message.length);
+        // System.out.println(message.length);
 
         byte[] encrypted = cipher.doFinal(message);
 
@@ -141,7 +141,7 @@ public class Client {
                     System.out.println("Tamanho do Arquivo;Tempo de Execução Estático;Tempo de Execução Distribuido");
 
                     //long[] timeSequencial = new long[5];;
-                    long[] timeParalelo = new long[5];
+                    long[] timeParalelo = new long[2];
 
                     for (int i = 2000; i <= 60000; i += 1000) {
                         createNewMsgFile(filename, msg, i);
@@ -157,7 +157,7 @@ public class Client {
                         //Sequencial s = new Sequencial(ciphertext, msg.get(i).getBytes()); //Classe que realiza processamento sequencial
                         Guess g[] = null;
 
-                        for(int j = 0; j < 5; j++){
+                        for(int j = 0; j < 2; j++){
                             //long tempoInicialEstatico = System.nanoTime();
                             //s.atacar();
                             //long tempoFinalEstatico = System.nanoTime();
@@ -174,14 +174,14 @@ public class Client {
 
                         //long mediaSequencial = 0;
                         long mediaParalelo = 0;
-                        for(int j = 0; j < 5; j++){
+                        for(int j = 0; j < 2; j++){
                             //mediaSequencial += timeSequencial[j];
                             mediaParalelo += timeParalelo[j];
                         }
 
                         //System.out.print(mediaSequencial/5.0);
                         //System.out.print(";");
-                        System.out.println(mediaParalelo/5.0);
+                        System.out.println(mediaParalelo/2.0);
 
                         //Imprime guesses encontradas
                         GuessPrinter.print(g);

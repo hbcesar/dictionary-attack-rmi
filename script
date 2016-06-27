@@ -1,7 +1,7 @@
 javac -cp . br/inf/ufes/pp2016_01/*.java
 
-java -cp . -Djava.rmi.server.hostname=192.168.1.101 br.inf.ufes.pp2016_01.SlaveImpl 192.168.1.101 escravinho
+java -cp . -Djava.rmi.server.hostname=192.168.2.13 br.inf.ufes.pp2016_01.SlaveImpl 192.168.2.13 escravinho
 java -cp . -Djava.rmi.server.hostname=192.168.1.101  br.inf.ufes.pp2016_01.MasterImpl
-java -cp . -Djava.rmi.hostname=192.168.1.101  br.inf.ufes.pp2016_01.Client house lepetitprince.txt 192.168.1.101 
+java -cp . -Djava.rmi.hostname=192.168.2.13  br.inf.ufes.pp2016_01.Client house thebible.txt 192.168.2.13
 
 java -cp . -Djava.rmi.server.hostname=192.168.1.101 br.inf.ufes.pp2016_01.MasterImpl
