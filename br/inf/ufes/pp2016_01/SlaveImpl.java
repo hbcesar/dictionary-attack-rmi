@@ -53,15 +53,12 @@ public class SlaveImpl implements Slave {
      */
     @Override
     public void startSubAttack(byte[] ciphertext, byte[] knowntext, long initialwordindex, long finalwordindex, SlaveManager callbackinterface) throws RemoteException {
-        System.out.println("Comecei");
+        System.out.println("Iniciando trabalho..");
         SlaveAttacker exec = new SlaveAttacker(ciphertext, knowntext, initialwordindex, finalwordindex, callbackinterface);
-        // Thread thread = new Thread(exec);
-        // this.thread = thread;
-        // thread.start();
         exec.setInitialwordindex(initialwordindex);
         exec.setFinalwordindex(finalwordindex);
         exec.startSubAttack();
-        System.out.println("Acabei");
+        System.out.println("Terminado.");
     }
 
     //Registre o escravo no mestre a cada 30s
@@ -95,10 +92,6 @@ public class SlaveImpl implements Slave {
             host = args[0];
         }
 
-        //Escravo recebe referencia para o mestre
-//        if (args.length > 0) {
-//            System.setProperty("java.rmi.server.hostname", args[0]);
-//        }        
         try {
             //Procura Mestre no Registry
             System.out.println(host);
@@ -117,6 +110,7 @@ public class SlaveImpl implements Slave {
             // escravo.attachShutDownHook(mestre);
             escravo.registerSlave(stub, mestre, registry, escravo, args[1]); //slave ira se registrar a cada 30s
 
+            //Captura ctrl+c e desregistra do escravo antes de terminar
             Runtime.getRuntime().addShutdownHook(new Thread() {
                 @Override
                 public void run() {
@@ -125,14 +119,12 @@ public class SlaveImpl implements Slave {
                         master.removeSlave(escravo.getId());
                         escravo.unregisterSlave();
                     } catch (RemoteException | NotBoundException ex) {
-//                    Logger.getLogger(SlaveImpl.class.getName()).log(Level.SEVERE, null, ex);
                         System.out.println("Escravo " + escravo.getName() + " nao consegui me desregistrar no mestre");
                     }
                 }
             });
 
         } catch (RemoteException | NotBoundException e) {
-//            e.printStackTrace();
             System.out.println("Escravo " + args[1] + ": nao consegui achar mestre no host especificado :(");
         }
     }

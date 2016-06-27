@@ -131,6 +131,7 @@ public class SlaveAttacker {
         scheduler.scheduleAtFixedRate(checkpointer, 0, 10000);
         System.out.println(begin);
 
+        //Percorre palavras do dicionario tentando fazer descriptografia
         for (currentIndex = begin; currentIndex < end; currentIndex += 1) {
             key = dictionary.get((int) currentIndex);  //Arrayoutofbounds
             decrypted_message = decrypt(key.getBytes());
@@ -144,6 +145,7 @@ public class SlaveAttacker {
             }
         }
 
+        //Ao fim do trabalho, cancela checkpointer
         checkpointer.cancel();
         scheduler.cancel();
     }
@@ -165,7 +167,6 @@ public class SlaveAttacker {
                 callbackinterface.checkpoint((long) this.slaveAttacker.getCurrentIndex());
             } catch (RemoteException ex) {
                 System.out.println("Escravo teve problemas no checkpointer");
-//                Logger.getLogger(SlaveAttacker.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
     }

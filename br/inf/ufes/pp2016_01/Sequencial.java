@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package br.inf.ufes.pp2016_01;
 
 import java.io.BufferedReader;
@@ -14,8 +9,7 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 
 /**
- *
- * @author hbcesar
+ * Classe que realiza processamento sequencial
  */
 public class Sequencial {
 
@@ -32,6 +26,7 @@ public class Sequencial {
         this.knowntext = knowntext;
     }
 
+    //Realiza descriptografia de mensagem
     private byte[] decrypt(byte[] key) {
         try {
             SecretKeySpec keySpec = new SecretKeySpec(key, "Blowfish");
@@ -44,23 +39,23 @@ public class Sequencial {
             return decrypted;
 
         } catch (javax.crypto.BadPaddingException e) {
-//            System.out.println("Senha invalida.");
             return null;
-
         } catch (Exception e) {
             System.out.println("Sequencial: erro na descriptografia.");
             return null;
         }
     }
 
+    //Verifica se palavra conhecida está contida na mensagem
     private boolean checkGuess(byte[] decrypted_message) {
         String d_message = new String(decrypted_message);
         String k_text = new String(this.knowntext);
 
         return d_message.toLowerCase().contains(k_text.toLowerCase());
     }
-
-    public void startSubAttack() {
+    
+    //Realiza ataque
+    public void startAttack() {
         String key;
         byte[] decrypted_message;
         long begin = 0;
@@ -82,6 +77,7 @@ public class Sequencial {
         guesses = guessList.toArray(guesses);
     }
 
+    //Realiza leitura do dicionario
     public void readDictionary() {
 
         try {
@@ -104,9 +100,9 @@ public class Sequencial {
     }
 
     public void atacar() {
-        readDictionary();
-        startSubAttack();
-        GuessPrinter.print(guesses);
+        readDictionary(); //le o dicionario
+        startAttack(); //Inicia ataque
+        GuessPrinter.print(guesses); //Imprime guesses
     }
 
 }

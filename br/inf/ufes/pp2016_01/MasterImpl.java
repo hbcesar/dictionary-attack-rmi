@@ -12,24 +12,37 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class MasterImpl implements Master {
 
+    //lista com threads que estao handling trabalhos de escravos
     private Map<Integer, ThreadMestreEscravo> threads = new HashMap<>();
+
+    //Referencia a classe que realiza verificacao de checkpoints
     private MasterCheckpoint masterCheckpoint;
 
+    //Palavras do dicionario
     private static List<String> dictionary = new ArrayList<>();
+
+    //Lista com escravos ativos
     private Map<Integer, SlaveData> slaves = new HashMap<>();
-    private Map<Integer, SlaveData> failed = new HashMap<>();
-    private Map<String, Integer> failedNames = new HashMap<>();
+    //mapeia nomes de escravos aos seus IDs na lista de escravos
     private Map<String, Integer> slaveID = new HashMap<>();
+
+    //Lista de trabalhos de escravos que falharam
+    private Map<Integer, SlaveData> failed = new HashMap<>();
+    //Mapeia nomes de escravos falhos a suas IDs na lista de falhos
+    private Map<String, Integer> failedNames = new HashMap<>();
+
+    //Lista de guesses
     private List<Guess> guessList = new ArrayList<>();
 
+    //Usada para retornar IDs aos escravos
     private int nSlaves = 0;
+    //Usada para retornar IDs de escravos falhos
     private int nFailed = 0;
-    private int completed = 0;
+
+    //Indica se mestre esta trabalhando ou nao
     private boolean done = true;
 
     public MasterImpl() {
@@ -43,9 +56,10 @@ public class MasterImpl implements Master {
     //metodo de Attacker
     @Override
     public Guess[] attack(byte[] ciphertext, byte[] knowntext) {
-        this.readDictionary();
         done = false;
+        this.readDictionary();  //le dicionario
 
+        //divide o trabalho igualmente entre escravos
         long tamVetor = dictionary.size();
         long tamVetorEscravos = tamVetor / slaves.size();
         long resto = tamVetor % slaves.size();
@@ -59,13 +73,16 @@ public class MasterImpl implements Master {
                 resto--;
             }
 
+            //Obtem escravo para realizar trabalho
             SlaveData slaveData = e.getValue();
             Slave slave = slaveData.getSlaveReference();
 
+            //Seta indices com o qual escravo vai trabalhar
             slaveData.setBeginIndex(inicio);
             slaveData.setEndIndex(fim);
             slaveData.setLastCheckedIndex(0);
 
+            //Cria uma thread para executar trabalho do escravo e manda executar
             ThreadMestreEscravo thread = new ThreadMestreEscravo(slave, ciphertext, knowntext, inicio, fim, this);
             threads.put((int) slaveData.getId(), thread);
             slaveData.setTime(System.nanoTime());
@@ -75,6 +92,7 @@ public class MasterImpl implements Master {
             fim += tamVetorEscravos;
         }
 
+        //divididos os trabalhos, executa thread para verificar checkpoints
         masterCheckpoint.start();
 
         Map<Integer, ThreadMestreEscravo> threads_cpy = new HashMap<>(threads);
@@ -82,13 +100,12 @@ public class MasterImpl implements Master {
             try {
                 e.getValue().join();
             } catch (InterruptedException err) {
-//                err.printStackTrace();
                 System.out.println("Erro ao fazer join de threads no mestre.");
             }
         }
 
+        //com trabalho finalizado, limpa lista de threads (lista sera reusada para redividir trabalhos)
         threads.clear();
-        masterCheckpoint.interrupt();
 
         //se chegou até aqui, significa que os escravos terminaram de alguma forma (compeltaram ou falharam)
         //entao, verifica se existe trabalho a ser redistribuido
@@ -99,7 +116,10 @@ public class MasterImpl implements Master {
         }
 
         done = true;
+        //interrompe thread checadora de checkpoints (pois trabalho terminou)
+        masterCheckpoint.interrupt();
 
+        //Copia lista de guesses em vetor e retorna
         Guess[] guesses = new Guess[guessList.size()];
         guesses = guessList.toArray(guesses);
 
@@ -107,19 +127,25 @@ public class MasterImpl implements Master {
     }
 
     private void rearrangeAttack(byte[] ciphertext, byte[] knowntext) {
-        System.out.println("\n\nHouve falha em algum escravo, realizando redistribuição de trabalho... \n\n");
+        System.out.println("Houve falha em algum escravo, realizando redistribuição de trabalho...");
+
+        //Iterador sobre escravos disponiveis para retrabalho
         Iterator it = slaves.entrySet().iterator();
 
+        //Iterador sobre trabalhos a serem refeitos
         for (Map.Entry<Integer, SlaveData> e : failed.entrySet()) {
             if (it.hasNext()) {
                 SlaveData slaveData = e.getValue();
+
+                //cria nova classe para enviar trabalho
                 SlaveData worker;
                 Map.Entry pair = (Map.Entry) it.next();
                 worker = (SlaveData) pair.getValue();
                 it.remove();
+
+                //Cria thread para novo trabalho
                 ThreadMestreEscravo thread;
                 thread = new ThreadMestreEscravo(worker.getSlaveReference(), ciphertext, knowntext, slaveData.getBeginIndex(), slaveData.getEndIndex(), this);
-                System.out.println("Refazendo tarefa, indices: " + slaveData.getBeginIndex() + " e " + slaveData.getEndIndex());
                 threads.put((int) slaveData.getId(), thread);
                 slaveData.setTime(System.nanoTime());
                 thread.start();
@@ -130,7 +156,6 @@ public class MasterImpl implements Master {
                 try {
                     Thread.sleep(30000);
                 } catch (InterruptedException ex) {
-//                    Logger.getLogger(MasterImpl.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
         }
@@ -139,7 +164,6 @@ public class MasterImpl implements Master {
             try {
                 e.getValue().join();
             } catch (InterruptedException err) {
-//                err.printStackTrace();
                 System.out.println("Erro aguardando threads apos redistribuição");
             }
         }
@@ -174,27 +198,23 @@ public class MasterImpl implements Master {
     //metodos de SlaveManager
     @Override
     public synchronized int addSlave(Slave s, String slavename) throws RemoteException {
-
+        //verifica se escravo ja nao foi adicionado e esta apenas se re-registrando
         if (slaveID.containsKey(slavename)) {
             System.out.println("Registro do escravo " + slavename + " atualizado.");
 
             return slaveID.get(slavename);
-        } else if (failedNames.containsKey(slavename)) {
-            SlaveData slaveData = new SlaveData(s, slavename, nSlaves);
-            slaves.put(nSlaves, slaveData);
-            slaveID.put(slavename, nSlaves);
-
-            int failedId = failedNames.get(slavename);
-            failedNames.remove(slavename);
-            failed.remove(failedId);
-
-            System.out.println("Escravo " + slavename + " readicionado.");
-
-            return nSlaves++;
         } else {
+            //adiciona escravo
             SlaveData slaveData = new SlaveData(s, slavename, nSlaves);
             slaves.put(nSlaves, slaveData);
             slaveID.put(slavename, nSlaves);
+
+            //verifica se esravo ja foi removido anteriormente e retorna-o para lista de escravos ativos
+            if (failedNames.containsKey(slavename)) {
+                int failedId = failedNames.get(slavename);
+                failedNames.remove(slavename);
+                failed.remove(failedId);
+            }
 
             System.out.println("Escravo " + slavename + " adicionado (ID: " + slaveData.getId() + ")");
 
@@ -204,9 +224,11 @@ public class MasterImpl implements Master {
 
     @Override
     public synchronized void removeSlave(int slaveKey) throws RemoteException {
+        //confere se escravo deve mesmo ser removido
         if (slaves.containsKey(slaveKey)) {
             SlaveData s = slaves.get(slaveKey);
 
+            //se escravo ainda nao terminou, deve ser registrado trabalho restante
             if (!s.hasFinished()) {
                 SlaveData remaining = new SlaveData();
                 if (s.getLastCheckedIndex() != 0) {
@@ -222,6 +244,7 @@ public class MasterImpl implements Master {
             slaves.remove(slaveKey);
             slaveID.remove(s.getName());
 
+            //se foi criado thread para trabalho, interrompa-a
             if (threads.containsKey(slaveKey)) {
                 threads.get((int) s.getId()).interrupt();
                 threads.remove((int) s.getId());
@@ -242,7 +265,7 @@ public class MasterImpl implements Master {
     @Override
     public void checkpoint(long currentindex) throws RemoteException {
 
-        //Procura em qual escravo esse checkpoint corresponde
+        //Procura em qual escravo esse checkpoint corresponde e registra
         for (Map.Entry<Integer, SlaveData> entry : slaves.entrySet()) {
             if (currentindex >= entry.getValue().getBeginIndex() && currentindex <= entry.getValue().getEndIndex()) {
                 System.out.println("Checkpoint Escravo: " + entry.getValue().getName() + " currentIndex: " + currentindex);
@@ -282,7 +305,6 @@ public class MasterImpl implements Master {
 
             System.out.println("Mestre está pronto...");
 
-            //TODO
             master.attachShutDownHook();
         } catch (Exception e) {
             System.err.println("Mestre gerou exceção.");

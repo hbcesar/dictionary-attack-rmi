@@ -3,9 +3,8 @@ package br.inf.ufes.pp2016_01;
 import java.rmi.RemoteException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
+//Classe auxiliar que realiza verificação de checkpoints enviados pelos escravos
 public class MasterCheckpoint extends Thread {
 
     private MasterImpl master;
@@ -18,16 +17,25 @@ public class MasterCheckpoint extends Thread {
 
     @Override
     public void run() {
+        //laço verifica se mestre está realizando trabalho para o cliente
         while (!master.isDone()) {
             try {
+                //Intervalo de 10s entre verificação e outra
                 Thread.sleep(1000);
+                
+                //Itera sobre escravos verificando intervalos de checkpoint
                 Map<Integer, SlaveData> slavex = new HashMap<>(slaves);
+                
                 for (Map.Entry<Integer, SlaveData> e : slavex.entrySet()) {
                     SlaveData s = e.getValue();
-                    long currentTime = System.nanoTime()/1000000000;
-                    long lastCheckedTime = (long) s.getTime();
+                    
+                    long lastCheckedTime = (long) s.getTime(); //pega tempo do ultimo checkin
+                    long currentTime = System.nanoTime()/1000000000; //pega tempo atual
                     long TimeBetweenCheckpoints = currentTime - lastCheckedTime;
+                    
+                    //verifica se slave nao terminou trabalho
                     boolean slaveWorking = !e.getValue().hasFinished();
+                    
                     if (TimeBetweenCheckpoints > 20.0 && slaveWorking) {
                         System.out.println("Escravo vai ser removido por atraso em checkpoint: " + s.getName());
                         master.removeSlave((int) s.getId());
@@ -35,7 +43,6 @@ public class MasterCheckpoint extends Thread {
                 }
             } catch (RemoteException e) {
                 System.out.println("Erro ao criar thread verificadora de checkpoints no mestre.");
-                //Logger.getLogger(MasterCheckpoint.class.getName()).log(Level.SEVERE, null, ex);
             } catch (InterruptedException ex){
                 
             }
