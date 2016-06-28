@@ -55,10 +55,10 @@ public class SlaveImpl implements Slave {
     @Override
     public void startSubAttack(byte[] ciphertext, byte[] knowntext, long initialwordindex, long finalwordindex, SlaveManager callbackinterface) throws RemoteException {
         System.out.println("Iniciando trabalho..");
-        // SlaveAttacker exec = new SlaveAttacker(ciphertext, knowntext, initialwordindex, finalwordindex, callbackinterface);
-        // exec.setInitialwordindex(initialwordindex);
-        // exec.setFinalwordindex(finalwordindex);
-        // exec.startSubAttack();
+         SlaveAttacker exec = new SlaveAttacker(ciphertext, knowntext, initialwordindex, finalwordindex, callbackinterface);
+         exec.setInitialwordindex(initialwordindex);
+         exec.setFinalwordindex(finalwordindex);
+         exec.startSubAttack();
         System.out.println("Terminado.");
     }
 

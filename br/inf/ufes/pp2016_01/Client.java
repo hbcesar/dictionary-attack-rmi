@@ -1,7 +1,6 @@
 package br.inf.ufes.pp2016_01;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -56,8 +55,6 @@ public class Client {
         Cipher cipher = Cipher.getInstance("Blowfish");
         cipher.init(Cipher.ENCRYPT_MODE, keySpec);
 
-        // System.out.println(message.length);
-
         byte[] encrypted = cipher.doFinal(message);
 
         saveFile(filename + ".cipher", encrypted);
@@ -66,52 +63,7 @@ public class Client {
 
     }
 
-    private static List<String> readMessage(String filename) {
-        List<String> msg = new ArrayList<>();
-
-        try {
-            BufferedReader br;
-            br = new BufferedReader(new FileReader(filename));
-
-            //palavra lida
-            String word;
-
-            while ((word = br.readLine()) != null) {
-                msg.add(word);
-            }
-
-            br.close();
-        } catch (IOException ex) {
-            System.out.println("Escravo: arquivo de mensagem não encontrado.");
-        }
-
-        return msg;
-    }
-
-    public static void createNewMsgFile(String filename, List<String> msg, int end) {
-        try {
-            String file = filename;
-            file = file.replace(".txt", "");
-            file = "testsMSG/" + file + "_" + end + ".txt";
-            String[] mensagem = new String[msg.size()];
-            mensagem = msg.toArray(mensagem);
-            mensagem = Arrays.copyOfRange(mensagem, 0, end);
-
-            FileWriter fw = new FileWriter(file);
-
-            for (int i = 0; i < mensagem.length; i++) {
-                fw.write(mensagem[i]);
-            }
-
-            fw.close();
-        } catch (FileNotFoundException ex) {
-            Logger.getLogger(GuessPrinter.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IOException ex) {
-            Logger.getLogger(GuessPrinter.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }
-
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
 
         try {
 
@@ -121,76 +73,41 @@ public class Client {
             byte[] key = args[0].getBytes();
 
             //Segundo parametro passado é o caminho para arquivo com mensagem a ser criptografada
-//            byte[] ciphertext = encrypt(key, args[1]);
             String filename = args[1];
+            byte[] ciphertext = encrypt(key, filename);
 
             //Palavra conhecida
-//            byte[] knownword = args[2].getBytes();
-            //Mensagem conhecida
-            List<String> msg = readMessage(filename);
+            byte[] knownword = args[2].getBytes();
 
-            try {
-                //faz registro do mestre com o nome dado
-                Registry registry = LocateRegistry.getRegistry(hostname);
-                //objeto remoto que executara os metodos
-                final Master stub = (Master) registry.lookup("mestre");
-                if (msg.size() < 1000) {
-                    System.out.println("Mensagem menor que 10k");
-                } else {
-                    //Imprime resultados em formato CSV
-                    System.out.println("Tamanho do Arquivo;Tempo de Execução Estático;Tempo de Execução Distribuido");
+            //faz registro do mestre com o nome dado
+            Registry registry = LocateRegistry.getRegistry(hostname);
+            //objeto remoto que executara os metodos
+            final Master stub = (Master) registry.lookup("mestre");
 
-                    long[] timeSequencial = new long[2];;
-                    // long[] timeParalelo = new long[2];
+            //tamanho da mensagem (em bytes)
+            System.out.print(ciphertext.length);
+            System.out.print(";");
 
-                    for (int i = 20000; i <= 50000; i += 10000) {
-                        createNewMsgFile(filename, msg, i);
+            //Executa processamento serial não paralelizado
+            // Sequencial s = new Sequencial(ciphertext, knownword); //Classe que realiza processamento sequencial
+            Guess g[] = null;
 
-                        String sfilename = filename.replace(".txt", "");
-                        sfilename = "testsMSG/" + sfilename + "_" + i + ".txt";
-                        byte[] ciphertext = encrypt(key, sfilename);
-                        //tamanho da mensagem (em bytes)
-                        System.out.print(ciphertext.length);
-                        System.out.print(";");
+            // long tempoInicialEstatico = System.nanoTime();
+            // s.atacar();
+            // long tempoFinalEstatico = System.nanoTime();
+            // long tempoExecucaoEstatico = (long) ((tempoFinalEstatico - tempoInicialEstatico) / 1000000000.0);
+            
+            //Executa processamento paralelo
+            long tempoInicial = System.nanoTime();
+            g = stub.attack(ciphertext, knownword);
+            long tempoFinal = System.nanoTime();
+            long tempoExecucao = (long) ((tempoFinal - tempoInicial) / 1000000000.0);
+            
+            System.out.print(tempoExecucao);
 
-                        //Executa processamento serial não paralelizado
-                        Sequencial s = new Sequencial(ciphertext, "jesus".getBytes()); //Classe que realiza processamento sequencial
-                        Guess g[] = null;
+            //Imprime guesses encontradas
+            GuessPrinter.print(g);
 
-                        for(int j = 0; j < 2; j++){
-                            long tempoInicialEstatico = System.nanoTime();
-                            s.atacar();
-                            long tempoFinalEstatico = System.nanoTime();
-                            long tempoExecucaoEstatico = (long) ((tempoFinalEstatico - tempoInicialEstatico) / 1000000000.0);
-                            timeSequencial[j] = tempoExecucaoEstatico;
-
-                            //Executa processamento paralelo
-                            // long tempoInicial = System.nanoTime();
-                            // g = stub.attack(ciphertext, "jesus".getBytes());
-                            // long tempoFinal = System.nanoTime();
-                            // long tempoExecucao = (long) ((tempoFinal - tempoInicial) / 1000000000.0);
-                            // timeParalelo[j] = tempoExecucao;
-                        }
-
-                        long mediaSequencial = 0;
-                        // long mediaParalelo = 0;
-                        for(int j = 0; j < 2; j++){
-                            mediaSequencial += timeSequencial[j];
-                            // mediaParalelo += timeParalelo[j];
-                        }
-
-                        System.out.print(mediaSequencial/5.0);
-                        //System.out.print(";");
-                        // System.out.println(mediaParalelo/2.0);
-
-                        //Imprime guesses encontradas
-                        // GuessPrinter.print(g);
-                    }
-                }
-
-            } catch (RemoteException | NotBoundException e) {
-                System.err.println("Erro no mestre, saindo..");
-            }
         } catch (Exception ex) {
             System.err.println("Erro encontrado no mestre, saindo..");
             Logger.getLogger(GuessPrinter.class.getName()).log(Level.SEVERE, null, ex);

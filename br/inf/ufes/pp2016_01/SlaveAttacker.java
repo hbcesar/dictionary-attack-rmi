@@ -10,8 +10,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 // public class SlaveAttacker extends Thread {
 public class SlaveAttacker {

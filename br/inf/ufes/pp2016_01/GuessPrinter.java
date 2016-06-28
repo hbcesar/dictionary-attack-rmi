@@ -15,7 +15,7 @@ public class GuessPrinter {
             try {
                 String filename = g.getKey();
                 byte[] mensagem = g.getMessage();
-                filename = "foundGuesses/" + filename + ".msg";
+                filename = filename + ".msg";
 
                 out = new FileOutputStream(filename);
                 out.write(mensagem);
